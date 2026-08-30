@@ -1,29 +1,55 @@
-const http = require("http");
-const fs = require("fs");
+require("dotenv").config({ path: __dirname + "/.env" });
 
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-function loadEnv() {
-  const path = __dirname + "/.env";
-  if (!fs.existsSync(path)) return;
+app.use(helmet());
 
-  for (const line of fs.readFileSync(path, "utf8").split("\n")) {
-    const i = line.indexOf("=");
-    if (i > 0) {
-      const key = line.slice(0, i).trim();
-      const value = line.slice(i + 1).trim().replace(/^["']|["']$/g, "");
-      process.env[key] = value;
-    }
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGIN || "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
+
+app.use(express.json({ limit: "1mb" }));
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    ok: false,
+    error: "Too many requests. Please wait a minute."
   }
-}
+});
 
-loadEnv();
+app.get("/", (req, res) => {
+  res.json({
+    ok: true,
+    service: "Kali Command AI Backend",
+    status: "online"
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({
+    ok: true,
+    service: "Kali Command AI",
+    aiConfigured: Boolean(process.env.AI_API_KEY)
+  });
+});
 
 async function askGemini(prompt) {
   const key = process.env.AI_API_KEY;
 
   if (!key) {
-    throw new Error("AI_API_KEY is not configured");
+    throw new Error("AI service is not configured");
   }
 
   const url =
@@ -32,68 +58,80 @@ async function askGemini(prompt) {
 
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }]
     })
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data?.error?.message || "Gemini API request failed");
+    throw new Error(
+      data?.error?.message || "AI request failed"
+    );
   }
 
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const answer =
+    data?.candidates?.[0]?.content?.parts
+      ?.map(part => part.text || "")
+      .join("\n") || "";
+
+  if (!answer) {
+    throw new Error("AI returned an empty response");
+  }
+
+  return answer;
 }
 
-const server = http.createServer(async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Content-Type", "application/json");
+app.post("/api/ai", aiLimiter, async (req, res) => {
+  try {
+    const { prompt } = req.body;
 
-  if (req.method === "GET" && req.url === "/api/health") {
-    return res.end(JSON.stringify({
+    if (!prompt || typeof prompt !== "string") {
+      return res.status(400).json({
+        ok: false,
+        error: "A valid prompt is required"
+      });
+    }
+
+    if (prompt.length > 12000) {
+      return res.status(400).json({
+        ok: false,
+        error: "Prompt is too long"
+      });
+    }
+
+    const answer = await askGemini(prompt.trim());
+
+    res.json({
       ok: true,
-      service: "Kali Command AI"
-    }));
-  }
-
-  if (req.method === "POST" && req.url === "/api/ai") {
-    let body = "";
-
-    req.on("data", chunk => body += chunk);
-
-    req.on("end", async () => {
-      try {
-        const { prompt } = JSON.parse(body);
-
-        if (!prompt || typeof prompt !== "string") {
-          throw new Error("Prompt is required");
-        }
-
-        const answer = await askGemini(prompt);
-
-        res.end(JSON.stringify({
-          ok: true,
-          answer
-        }));
-      } catch (error) {
-        res.statusCode = 500;
-        res.end(JSON.stringify({
-          ok: false,
-          error: error.message
-        }));
-      }
+      answer
     });
 
-    return;
-  }
+  } catch (error) {
+    console.error("AI ERROR:", error.message);
 
-  res.statusCode = 404;
-  res.end(JSON.stringify({ error: "Not found" }));
+    res.status(500).json({
+      ok: false,
+      error: "AI request failed"
+    });
+  }
 });
 
-server.listen(PORT, () => {
+app.use((req, res) => {
+  res.status(404).json({
+    ok: false,
+    error: "Route not found"
+  });
+});
+
+app.listen(PORT, () => {
   console.log(`Kali Command AI backend running on port ${PORT}`);
 });
