@@ -274,11 +274,7 @@
                     <p>Create optimized video descriptions.</p>
                 </div>
             </div>
-            <div class="tool-workspace">
-<textarea id="descriptionTopic" placeholder="Describe your video topic..."></textarea>
-<button class="primary-btn" id="generateDescription">📝 Generate Description</button>
-<div id="descriptionResults" class="results-area"></div>
-</div>
+            <div class="coming-card">Description AI engine will appear here.</div>
         </section>
 
         <section class="page tool-page" id="keywords">
@@ -289,11 +285,7 @@
                     <p>Discover keywords and content opportunities.</p>
                 </div>
             </div>
-            <div class="tool-workspace">
-<textarea id="keywordTopic" placeholder="Enter your video topic..."></textarea>
-<button class="primary-btn" id="generateKeywords">🏷️ Generate Keywords</button>
-<div id="keywordResults" class="results-area"></div>
-</div>
+            <div class="coming-card">Keyword intelligence engine will appear here.</div>
         </section>
 
         <section class="page tool-page" id="doctor">
@@ -304,11 +296,7 @@
                     <p>Analyze channel health and identify improvement opportunities.</p>
                 </div>
             </div>
-            <div class="tool-workspace">
-<textarea id="doctorTopic" placeholder="Enter your channel topic or describe your channel..."></textarea>
-<button class="primary-btn" id="runDoctor">📺 Run Channel Check</button>
-<div id="doctorResults" class="results-area"></div>
-</div>
+            <div class="coming-card">Connect YouTube to start channel analysis.</div>
         </section>
 
         <section class="page tool-page" id="analytics">
@@ -330,11 +318,7 @@
                     <p>Create data-informed content strategies.</p>
                 </div>
             </div>
-            <div class="tool-workspace">
-<textarea id="growthTopic" placeholder="Enter your channel/video topic..."></textarea>
-<button class="primary-btn" id="generateGrowth">📈 Build Growth Strategy</button>
-<div id="growthResults" class="results-area"></div>
-</div>
+            <div class="coming-card">Growth intelligence engine will appear here.</div>
         </section>
 
         <section class="page tool-page" id="thumbnail">
@@ -345,11 +329,7 @@
                     <p>Analyze and improve thumbnail strategy.</p>
                 </div>
             </div>
-            <div class="tool-workspace">
-<textarea id="thumbnailTopic" placeholder="Enter your video topic..."></textarea>
-<button class="primary-btn" id="generateThumbnail">🖼️ Create Thumbnail Plan</button>
-<div id="thumbnailResults" class="results-area"></div>
-</div>
+            <div class="coming-card">Thumbnail analysis tools will appear here.</div>
         </section>
 
         <section class="page tool-page" id="scheduler">
@@ -360,12 +340,7 @@
                     <p>Plan and schedule authorized uploads.</p>
                 </div>
             </div>
-            <div class="tool-workspace">
-<input id="scheduleTitle" type="text" placeholder="Video title...">
-<input id="scheduleDate" type="datetime-local">
-<button class="primary-btn" id="saveSchedule">⏰ Save Schedule</button>
-<div id="scheduleResults" class="results-area"></div>
-</div>
+            <div class="coming-card">Scheduling tools will appear here.</div>
         </section>
 
         <section class="page tool-page" id="video-lab">
@@ -376,12 +351,7 @@
                     <p>Prepare and optimize your video files.</p>
                 </div>
             </div>
-            <div class="tool-workspace">
-<input id="videoTitle" type="text" placeholder="Enter video title...">
-<textarea id="videoNotes" placeholder="Enter video notes or content plan..."></textarea>
-<button class="primary-btn" id="prepareVideo">🎥 Prepare Video Plan</button>
-<div id="videoResults" class="results-area"></div>
-</div>
+            <div class="coming-card">Video processing tools will appear here.</div>
         </section>
 
         <section class="page tool-page" id="settings">
