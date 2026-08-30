@@ -159,3 +159,177 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+
+/* ===== EXTRA YOUTUBE TOOLS ===== */
+document.addEventListener("DOMContentLoaded", () => {
+
+  function getValue(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  }
+
+  function setResult(id, html) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
+
+  /* DESCRIPTION LAB */
+  const generateDescription = document.getElementById("generateDescription");
+
+  if (generateDescription) {
+    generateDescription.addEventListener("click", () => {
+      const topic = getValue("descriptionTopic");
+
+      if (!topic) {
+        setResult("descriptionResults",
+          "<p>⚠️ पहले अपने वीडियो का topic लिखो।</p>");
+        return;
+      }
+
+      setResult("descriptionResults", `
+        <h3>📝 Optimized Description</h3>
+        <p><strong>${topic}</strong></p>
+        <p>इस वीडियो में हम ${topic} के बारे में आसान और interesting तरीके से जानेंगे। वीडियो को अंत तक देखें और अपने विचार comments में बताएं!</p>
+        <p>👍 Like करें | 💬 Comment करें | 🔔 Subscribe करें</p>
+        <p>#YouTube #${topic.replace(/\s+/g, "")} #Trending</p>
+      `);
+    });
+  }
+
+  /* KEYWORD LAB */
+  const generateKeywords = document.getElementById("generateKeywords");
+
+  if (generateKeywords) {
+    generateKeywords.addEventListener("click", () => {
+      const topic = getValue("keywordTopic");
+
+      if (!topic) {
+        setResult("keywordResults",
+          "<p>⚠️ पहले अपना वीडियो topic लिखो।</p>");
+        return;
+      }
+
+      const words = topic
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
+
+      const keywords = [
+        topic,
+        `${topic} tutorial`,
+        `${topic} explained`,
+        `${topic} hindi`,
+        `best ${topic}`,
+        `${topic} tips`,
+        `${topic} guide`,
+        ...words
+      ];
+
+      const unique = [...new Set(keywords)];
+
+      setResult("keywordResults", `
+        <h3>🏷️ Keyword Ideas</h3>
+        <p>${unique.map(k => `#${k.replace(/\s+/g, "")}`).join(" ")}</p>
+        <p><strong>SEO Keywords:</strong></p>
+        <p>${unique.join(", ")}</p>
+      `);
+    });
+  }
+
+  /* CHANNEL DOCTOR */
+  const runDoctor = document.getElementById("runDoctor");
+
+  if (runDoctor) {
+    runDoctor.addEventListener("click", () => {
+      setResult("doctorResults", `
+        <h3>📺 Channel Health Check</h3>
+        <p>✅ Check your thumbnail CTR</p>
+        <p>✅ Improve your first 30 seconds</p>
+        <p>✅ Use searchable titles</p>
+        <p>✅ Add relevant keywords naturally</p>
+        <p>✅ Upload consistently</p>
+        <p>💡 Tip: Real channel analytics require YouTube API connection.</p>
+      `);
+    });
+  }
+
+  /* GROWTH ENGINE */
+  const generateGrowth = document.getElementById("generateGrowth");
+
+  if (generateGrowth) {
+    generateGrowth.addEventListener("click", () => {
+      setResult("growthResults", `
+        <h3>📈 Growth Strategy</h3>
+        <ol>
+          <li>Choose one clear content niche.</li>
+          <li>Create searchable + clickable titles.</li>
+          <li>Make thumbnails easy to understand.</li>
+          <li>Hook viewers in the first 30 seconds.</li>
+          <li>Post consistently.</li>
+          <li>Study retention and click-through rate.</li>
+          <li>Repeat formats that genuinely perform well.</li>
+        </ol>
+      `);
+    });
+  }
+
+  /* THUMBNAIL LAB */
+  const generateThumbnail = document.getElementById("generateThumbnail");
+
+  if (generateThumbnail) {
+    generateThumbnail.addEventListener("click", () => {
+      setResult("thumbnailResults", `
+        <h3>🖼️ Thumbnail Plan</h3>
+        <p><strong>1.</strong> Use one clear main subject.</p>
+        <p><strong>2.</strong> Keep text short: 2–4 words.</p>
+        <p><strong>3.</strong> Make the subject easy to recognize.</p>
+        <p><strong>4.</strong> Avoid too many small details.</p>
+        <p><strong>5.</strong> Make the thumbnail match the video title.</p>
+      `);
+    });
+  }
+
+  /* SMART SCHEDULER */
+  const saveSchedule = document.getElementById("saveSchedule");
+
+  if (saveSchedule) {
+    saveSchedule.addEventListener("click", () => {
+
+      const scheduleData = {
+        savedAt: new Date().toLocaleString(),
+        message: "Upload schedule saved locally"
+      };
+
+      localStorage.setItem(
+        "kaliCommandAISchedule",
+        JSON.stringify(scheduleData)
+      );
+
+      setResult("scheduleResults", `
+        <h3>⏰ Schedule Saved</h3>
+        <p>✅ आपकी schedule information इस device पर save कर दी गई है।</p>
+      `);
+    });
+  }
+
+  /* VIDEO LAB */
+  const prepareVideo = document.getElementById("prepareVideo");
+
+  if (prepareVideo) {
+    prepareVideo.addEventListener("click", () => {
+      setResult("videoResults", `
+        <h3>🎥 Video Preparation Plan</h3>
+        <ol>
+          <li>Choose your video topic.</li>
+          <li>Create a strong title.</li>
+          <li>Prepare an attractive thumbnail.</li>
+          <li>Write a clear description.</li>
+          <li>Add relevant keywords.</li>
+          <li>Check the first 30 seconds.</li>
+          <li>Review everything before publishing.</li>
+        </ol>
+      `);
+    });
+  }
+
+});
