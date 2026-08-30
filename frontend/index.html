@@ -8,6 +8,19 @@
 </head>
 
 <body>
+<div id="welcomeScreen" class="welcome-screen">
+  <div class="welcome-card">
+    <div class="welcome-logo">🧠</div>
+    <div class="eyebrow">AI YOUTUBE COMMAND CENTER</div>
+    <h1>KALI COMMAND AI</h1>
+    <p>Build smarter. Grow stronger.</p>
+    <button id="enterApp" class="primary-btn">🚀 Enter Command Center</button>
+    <div class="welcome-credit">
+      Built by <strong>Raunak Patwal</strong><br>
+      School of GIC Bada
+    </div>
+  </div>
+</div>
 
 <div class="app">
 
@@ -400,5 +413,20 @@
 
 <script src="app.js"></script>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const welcome = document.getElementById("welcomeScreen");
+  const enter = document.getElementById("enterApp");
+
+  if (sessionStorage.getItem("kaliEntered") === "1") {
+    welcome.style.display = "none";
+  }
+
+  enter.addEventListener("click", () => {
+    sessionStorage.setItem("kaliEntered", "1");
+    welcome.style.display = "none";
+  });
+});
+</script>
 </body>
 </html>

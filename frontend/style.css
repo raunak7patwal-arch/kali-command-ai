@@ -542,3 +542,47 @@ textarea {
     }
 
 }
+
+.welcome-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #05070d;
+}
+
+.welcome-card {
+  width: min(520px, 100%);
+  padding: 42px 28px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 28px;
+  background: rgba(15,18,30,.96);
+  box-shadow: 0 25px 80px rgba(0,0,0,.55);
+}
+
+.welcome-logo {
+  font-size: 64px;
+  margin-bottom: 18px;
+}
+
+.welcome-card h1 {
+  margin: 10px 0;
+  font-size: clamp(32px, 8vw, 52px);
+  letter-spacing: 2px;
+}
+
+.welcome-card p {
+  opacity: .75;
+  margin-bottom: 30px;
+}
+
+.welcome-credit {
+  margin-top: 26px;
+  font-size: 13px;
+  line-height: 1.7;
+  opacity: .65;
+}
