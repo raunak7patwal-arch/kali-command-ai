@@ -5,3 +5,4 @@ android/app/build/
 *.apk
 *.aab
 .DS_Store
+backend/.env

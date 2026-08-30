@@ -56,108 +56,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // TITLE LAB
   const titleTopic = document.getElementById("titleTopic");
   const generateTitles = document.getElementById("generateTitles");
+  const titleTopic = document.getElementById("titleTopic");
   const titleResults = document.getElementById("titleResults");
 
   if (generateTitles) {
-    generateTitles.addEventListener("click", () => {
-
+    generateTitles.addEventListener("click", async () => {
       const topic = titleTopic.value.trim();
 
       if (!topic) {
-        titleResults.innerHTML =
-          "<p>⚠️ Please describe your video topic first.</p>";
+        titleResults.innerHTML = "<p>⚠️ Enter your video topic first.</p>";
         return;
       }
 
-      const titles = [
-        `🔥 ${topic} – What You Need to Know!`,
-        `I Tried ${topic}... Here's What Happened 😱`,
-        `${topic}: The Complete Guide for Beginners`,
-        `Top 10 Things You Didn't Know About ${topic}`,
-        `Is ${topic} Actually Worth It? 🤯`,
-        `The Truth About ${topic} Nobody Tells You`,
-        `${topic} Explained in Simple Words`,
-        `Watch This Before You Try ${topic}! ⚠️`
-      ];
+      generateTitles.disabled = true;
+      generateTitles.textContent = "🧠 Generating...";
+
+      const answer = await askAI(
+        `Generate 10 YouTube title ideas for this topic: ${topic}.
+Make them engaging, accurate, and suitable for YouTube.
+Return only a numbered list.`
+      );
 
       titleResults.innerHTML = `
-        <h3>✨ Generated Title Ideas</h3>
-        <div class="title-list">
-          ${titles.map((title, index) =>
-            `<button class="generated-title" data-title="${encodeURIComponent(title)}">
-              ${index + 1}. ${title}
-            </button>`
-          ).join("")}
-        </div>
-        <p class="copy-hint">Tap a title to copy it.</p>
+        <h3>✨ AI Title Suggestions</h3>
+        <div class="growth-item"><p>${answer.replace(/\n/g, "<br>")}</p></div>
       `;
 
-      document.querySelectorAll(".generated-title").forEach(button => {
-        button.addEventListener("click", async () => {
-          const text = decodeURIComponent(button.dataset.title);
-
-          try {
-            await navigator.clipboard.writeText(text);
-            button.textContent = "✅ Copied!";
-            setTimeout(() => button.textContent = text, 1200);
-          } catch {
-            alert(text);
-          }
-        });
-      });
+      generateTitles.disabled = false;
+      generateTitles.textContent = "✨ Generate Titles";
     });
   }
-
-
-  // AI BRAIN - SAFE LOCAL DEMO
-  const brainVideo = document.getElementById("brainVideo");
-  const startBrain = document.getElementById("startBrain");
-  const brainResults = document.getElementById("brainResults");
-
-  if (startBrain) {
-    startBrain.addEventListener("click", () => {
-
-      if (!brainVideo.files || !brainVideo.files.length) {
-        brainResults.innerHTML =
-          "<p>⚠️ Please select a video first.</p>";
-        return;
-      }
-
-      const file = brainVideo.files[0];
-
-      brainResults.innerHTML = `
-        <h3>🧠 Analysis Started</h3>
-        <p><strong>Video:</strong> ${file.name}</p>
-        <p><strong>Size:</strong> ${(file.size / (1024 * 1024)).toFixed(2)} MB</p>
-
-        <div class="analysis-status">
-          🎬 Video selected successfully<br>
-          🧠 AI analysis engine ready<br>
-          ✨ Publishing strategy will require an AI backend/API connection
-        </div>
-      `;
-    });
-  }
-
-
-  // CONNECT CHANNEL
-  const connectChannel = document.getElementById("connectChannel");
-
-  if (connectChannel) {
-    connectChannel.addEventListener("click", () => {
-      alert(
-        "YouTube connection is not configured yet. " +
-        "We will add secure Google OAuth before connecting any channel."
-      );
-    });
-  }
-
-
-  // Basic local security behavior
-  window.addEventListener("error", () => {
-    console.warn("Application error handled safely.");
-  });
-
 
   // DESCRIPTION LAB
   const descriptionTopic = document.getElementById("descriptionTopic");
@@ -207,7 +135,76 @@ In this video, you'll discover useful information, important points, and interes
   }
 
 
-  // KEYWORD LAB
+  
+  // REAL AI DESCRIPTION
+  const generateDescription = document.getElementById("generateDescription");
+  const descriptionTopic = document.getElementById("descriptionTopic");
+  const descriptionResults = document.getElementById("descriptionResults");
+
+  if (generateDescription) {
+    generateDescription.addEventListener("click", async () => {
+      const topic = descriptionTopic.value.trim();
+
+      if (!topic) {
+        descriptionResults.innerHTML = "<p>⚠️ Enter your video topic first.</p>";
+        return;
+      }
+
+      generateDescription.disabled = true;
+      generateDescription.textContent = "🧠 Generating...";
+
+      const answer = await askAI(
+        `Write an engaging, accurate YouTube description for this video topic:
+${topic}
+
+Include a short hook, useful description, natural keywords, and a simple call to action. Do not make false claims.`
+      );
+
+      descriptionResults.innerHTML = `
+        <h3>📝 AI Description</h3>
+        <div class="growth-item"><p>${answer.replace(/\n/g, "<br>")}</p></div>
+      `;
+
+      generateDescription.disabled = false;
+      generateDescription.textContent = "📝 Generate Description";
+    });
+  }
+
+  // REAL AI KEYWORDS
+  const generateKeywords = document.getElementById("generateKeywords");
+  const keywordTopic = document.getElementById("keywordTopic");
+  const keywordResults = document.getElementById("keywordResults");
+
+  if (generateKeywords) {
+    generateKeywords.addEventListener("click", async () => {
+      const topic = keywordTopic.value.trim();
+
+      if (!topic) {
+        keywordResults.innerHTML = "<p>⚠️ Enter your video topic first.</p>";
+        return;
+      }
+
+      generateKeywords.disabled = true;
+      generateKeywords.textContent = "🧠 Generating...";
+
+      const answer = await askAI(
+        `Generate 20 relevant YouTube keywords for this topic:
+${topic}
+
+Return a clean numbered list. Avoid misleading or unrelated keywords.`
+      );
+
+      keywordResults.innerHTML = `
+        <h3>🏷️ AI Keywords</h3>
+        <div class="growth-item"><p>${answer.replace(/\n/g, "<br>")}</p></div>
+      `;
+
+      generateKeywords.disabled = false;
+      generateKeywords.textContent = "🏷️ Generate Keywords";
+    });
+  }
+
+// KEYWORD LAB
   const keywordTopic = document.getElementById("keywordTopic");
   const generateKeywords = document.getElementById("generateKeywords");
   const keywordResults = document.getElementById("keywordResults");
@@ -276,48 +273,70 @@ In this video, you'll discover useful information, important points, and interes
 
 
   // GROWTH ENGINE
-  const growthTopic = document.getElementById("growthTopic");
   const generateGrowth = document.getElementById("generateGrowth");
+  const growthTopic = document.getElementById("growthTopic");
   const growthResults = document.getElementById("growthResults");
 
   if (generateGrowth) {
-    generateGrowth.addEventListener("click", () => {
-      const topic = growthTopic.value.trim();
+    generateGrowth.addEventListener("click", async () => {
+      const topic = growthTopic ? growthTopic.value.trim() : "";
 
       if (!topic) {
-        growthResults.innerHTML =
-          "<p>⚠️ Enter a channel or video topic first.</p>";
+        growthResults.innerHTML = "<p>⚠️ Enter your channel/content topic first.</p>";
         return;
       }
 
-      const strategy = [
-        ["🎯 Niche", `Focus your content around ${topic} and keep the audience clear.`],
-        ["📅 Consistency", "Publish on a realistic schedule and maintain a consistent format."],
-        ["✨ Content", "Create a mix of searchable, educational and highly engaging videos."],
-        ["🪝 Hook", "Make the first few seconds immediately explain why viewers should continue."],
-        ["📝 Titles", "Use clear titles that accurately describe the video's main benefit."],
-        ["🖼️ Thumbnail", "Use one strong visual idea with short, readable text."],
-        ["📊 Analytics", "Review retention, CTR and watch time to decide what to improve."],
-        ["🔄 Experiment", "Test different hooks, topics and formats instead of changing everything at once."]
-      ];
+      generateGrowth.disabled = true;
+      generateGrowth.textContent = "🧠 Building...";
+
+      const answer = await askAI(
+        `Create a practical YouTube growth strategy for:
+${topic}
+
+Give content ideas, upload consistency advice, audience strategy, title/thumbnail advice and measurable goals.`
+      );
 
       growthResults.innerHTML = `
-        <h3>📈 Growth Strategy for ${topic}</h3>
-        <div class="growth-list">
-          ${strategy.map(([title, text]) => `
-            <div class="growth-item">
-              <strong>${title}</strong>
-              <p>${text}</p>
-            </div>
-          `).join("")}
-        </div>
+        <h3>📈 AI Growth Strategy</h3>
+        <div class="growth-item"><p>${answer.replace(/\n/g, "<br>")}</p></div>
       `;
+
+      generateGrowth.disabled = false;
+      generateGrowth.textContent = "📈 Build Growth Strategy";
     });
   }
 
-
-
   // CHANNEL DOCTOR
+  const runDoctor = document.getElementById("runDoctor");
+  const doctorInput = document.getElementById("doctorInput");
+  const doctorResults = document.getElementById("doctorResults");
+
+  if (runDoctor) {
+    runDoctor.addEventListener("click", async () => {
+      const info = doctorInput ? doctorInput.value.trim() : "";
+
+      runDoctor.disabled = true;
+      runDoctor.textContent = "🧠 Checking...";
+
+      const answer = await askAI(
+        `Act as a YouTube channel advisor.
+Analyze this channel information:
+${info || "No channel information provided."}
+
+Give a concise health check, problems to fix, opportunities and 5 actionable recommendations.`
+      );
+
+      doctorResults.innerHTML = `
+        <h3>📺 AI Channel Check</h3>
+        <div class="growth-item"><p>${answer.replace(/\n/g, "<br>")}</p></div>
+      `;
+
+      runDoctor.disabled = false;
+      runDoctor.textContent = "📺 Run Channel Check";
+    });
+  }
+
+  
   const doctorTopic = document.getElementById("doctorTopic");
   const runDoctor = document.getElementById("runDoctor");
   const doctorResults = document.getElementById("doctorResults");
@@ -492,3 +511,24 @@ In this video, you'll discover useful information, important points, and interes
 
 
 });
+/* REAL AI CONNECTION */
+async function askAI(prompt) {
+  try {
+    const response = await fetch("http://127.0.0.1:3000/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || "AI request failed");
+    }
+
+    return data.answer;
+  } catch (error) {
+    console.error("AI Error:", error);
+    return "⚠️ AI connection failed: " + error.message;
+  }
+}
