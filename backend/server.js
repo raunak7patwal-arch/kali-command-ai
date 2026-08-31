@@ -162,7 +162,9 @@ app.get("/api/health", (req, res) => {
     service: "Kali Command AI Backend",
     geminiConfigured: geminiConfigured(),
     googleOAuthConfigured: googleConfigured(),
-    youtubeConnected: Boolean(youtubeTokens)
+    youtubeConnected: Boolean(youtubeTokens),
+    databaseConfigured: Boolean(DATABASE_URL),
+    persistentStorage: Boolean(db)
   });
 });
 
