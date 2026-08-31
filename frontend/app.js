@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  const API_URL = "http://127.0.0.1:3000/api/ai";
+  const API_URL = (window.API_BASE_URL || "https://kali-command-ai.onrender.com") + "/api/ai";
 
   /* ================================
      HELPER FUNCTIONS
