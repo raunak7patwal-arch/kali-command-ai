@@ -1,8 +1,7 @@
 node_modules/
+backend/.env
+*.log
 .gradle/
 android/.gradle/
+android/local.properties
 android/app/build/
-*.apk
-*.aab
-.DS_Store
-backend/.env

@@ -1,0 +1,27 @@
+KALI COMMAND AI — PUBLIC DEPLOYMENT
+
+1. Deploy backend to a public HTTPS hosting provider.
+2. Get a public HTTPS URL/domain.
+3. Put the public URL into:
+   backend/.env -> PUBLIC_BASE_URL
+   backend/.env -> GOOGLE_REDIRECT_URI
+   frontend/config.js -> API_BASE_URL
+
+4. In Google Cloud OAuth Client:
+   Add:
+   https://YOUR-DOMAIN.example/oauth2callback
+
+5. Never expose:
+   GEMINI_API_KEY
+   GOOGLE_CLIENT_SECRET
+   SESSION_SECRET
+
+6. Test:
+   /api/health
+   /auth/youtube
+
+7. Configure Privacy Policy and Terms URLs.
+
+8. Complete Google verification if required.
+
+9. Build and sign release APK.
