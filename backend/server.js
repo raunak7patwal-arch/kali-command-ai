@@ -122,6 +122,65 @@ app.post("/api/ai", async (req, res) => {
   }
 });
 
+
+/* ========================================
+   OAUTH SAFE DIAGNOSTICS
+======================================== */
+
+app.get("/api/oauth/diagnostics", async (req, res) => {
+  const clientId = (process.env.GOOGLE_CLIENT_ID || "").trim();
+  const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || "").trim();
+  const redirectUri = (process.env.GOOGLE_REDIRECT_URI || "").trim();
+
+  const problems = [];
+  const warnings = [];
+
+  if (!clientId) problems.push("GOOGLE_CLIENT_ID is missing");
+  if (!clientSecret) problems.push("GOOGLE_CLIENT_SECRET is missing");
+  if (!redirectUri) problems.push("GOOGLE_REDIRECT_URI is missing");
+
+  if (clientId && !clientId.endsWith(".apps.googleusercontent.com")) {
+    warnings.push("Client ID does not look like a standard Google OAuth Web Client ID");
+  }
+
+  if (redirectUri) {
+    try {
+      const u = new URL(redirectUri);
+
+      if (u.protocol !== "https:" && u.hostname !== "localhost") {
+        problems.push("Production redirect URI should use HTTPS");
+      }
+
+      if (u.pathname !== "/oauth2callback") {
+        warnings.push("Redirect path is not /oauth2callback; verify it matches Google Cloud exactly");
+      }
+    } catch {
+      problems.push("GOOGLE_REDIRECT_URI is not a valid URL");
+    }
+  }
+
+  res.json({
+    ok: problems.length === 0,
+    configured: {
+      clientIdPresent: Boolean(clientId),
+      clientSecretPresent: Boolean(clientSecret),
+      redirectUriPresent: Boolean(redirectUri)
+    },
+    clientIdPreview: clientId
+      ? clientId.slice(0, 12) + "..." +
+        clientId.slice(-28)
+      : null,
+    redirectUri,
+    problems,
+    warnings,
+    nextStep:
+      problems.length
+        ? "Fix the configuration problems listed above."
+        : "Configuration looks structurally valid. If Google still returns invalid_client, verify that CLIENT_ID and CLIENT_SECRET belong to the exact same OAuth client."
+  });
+});
+
+
 /* ========================================
    YOUTUBE GOOGLE LOGIN
 ======================================== */
