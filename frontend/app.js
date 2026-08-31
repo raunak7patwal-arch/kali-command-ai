@@ -589,3 +589,101 @@ Do not invent channel statistics.
   );
 
 });
+
+
+/* ==========================================
+   UNIVERSAL BUTTON & NAVIGATION FIX
+   ========================================== */
+
+(function () {
+  console.log("Universal button system loaded");
+
+  function openPage(pageName) {
+    if (!pageName) return;
+
+    const target = document.getElementById(pageName);
+
+    if (!target) {
+      console.warn("Page not found:", pageName);
+      return;
+    }
+
+    // सभी pages hide
+    document.querySelectorAll(".page").forEach(function(page) {
+      page.classList.remove("active-page");
+      page.style.display = "none";
+    });
+
+    // Target page show
+    target.classList.add("active-page");
+    target.style.display = "block";
+
+    // Navigation active state
+    document.querySelectorAll(".nav-btn").forEach(function(btn) {
+      btn.classList.remove("active");
+    });
+
+    document.querySelectorAll(
+      '.nav-btn[data-page="' + pageName + '"]'
+    ).forEach(function(btn) {
+      btn.classList.add("active");
+    });
+
+    // Page title update
+    const navButton = document.querySelector(
+      '.nav-btn[data-page="' + pageName + '"]'
+    );
+
+    const title = document.getElementById("pageTitle");
+
+    if (navButton && title) {
+      const text = navButton.textContent
+        .replace(/[^\w\s]/g, "")
+        .trim();
+
+      if (text) title.textContent = text;
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+    console.log("Opened page:", pageName);
+  }
+
+  // पूरे document के लिए CLICK DELEGATION
+  document.addEventListener("click", function(event) {
+
+    // Navigation buttons
+    const nav = event.target.closest(".nav-btn[data-page]");
+
+    if (nav) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const page = nav.getAttribute("data-page");
+      openPage(page);
+      return;
+    }
+
+    // Dashboard quick buttons
+    const go = event.target.closest("[data-go]");
+
+    if (go) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const page = go.getAttribute("data-go");
+      openPage(page);
+      return;
+    }
+
+  }, true);
+
+  // बाहर से भी page खोलने के लिए
+  window.openCommandPage = openPage;
+
+  console.log("✓ All navigation buttons repaired");
+
+})();
