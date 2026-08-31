@@ -687,3 +687,22 @@ Do not invent channel statistics.
   console.log("✓ All navigation buttons repaired");
 
 })();
+
+/* ==========================================
+   YOUTUBE CONNECT BUTTON
+   ========================================== */
+document.addEventListener("DOMContentLoaded", function () {
+  const connectChannel = document.getElementById("connectChannel");
+
+  if (connectChannel) {
+    connectChannel.addEventListener("click", function () {
+      const backend =
+        window.API_BASE_URL ||
+        "https://kali-command-ai.onrender.com";
+
+      window.location.href = backend + "/auth/youtube";
+    });
+
+    console.log("✓ YouTube Connect button activated");
+  }
+});
