@@ -92,9 +92,13 @@ async function initializeDatabase() {
 }
 
 async function saveYouTubeTokens(tokens) {
-  await saveYouTubeTokens(tokens);
 
-  if (!db) return;
+  youtubeTokens = tokens;
+
+  if (!db) {
+    console.log("Temporary YouTube login active (DATABASE_URL not configured).");
+    return;
+  }
 
   await db.query(
     `
@@ -102,7 +106,6 @@ async function saveYouTubeTokens(tokens) {
       (id, tokens, updated_at)
     VALUES
       (1, $1::jsonb, NOW())
-
     ON CONFLICT (id)
     DO UPDATE SET
       tokens = EXCLUDED.tokens,
@@ -112,6 +115,7 @@ async function saveYouTubeTokens(tokens) {
   );
 
   console.log("✓ YouTube login saved permanently");
+
 }
 
 async function deleteYouTubeTokens() {
