@@ -1,26 +1,36 @@
-name: Build Android APK
+name: Build APK and Publish Release
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
           cache: npm
 
       - name: Install dependencies
-        run: npm ci || npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Sync Capacitor Android
         run: npx cap sync android
@@ -31,12 +41,35 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Make Gradle executable
+        working-directory: android
+        run: chmod +x gradlew
+
       - name: Build Debug APK
         working-directory: android
-        run: chmod +x gradlew && ./gradlew assembleDebug
+        run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Prepare APK
+        run: |
+          mkdir -p release
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             release/Kali-Command-AI.apk
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: Kali-Command-AI-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: release/Kali-Command-AI.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Kali Command AI APK Build ${{ github.run_number }}
+          body: |
+            Automated Android APK build.
+
+            Download the APK file below and install it on Android.
+          files: release/Kali-Command-AI.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
