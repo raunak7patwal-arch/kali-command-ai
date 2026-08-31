@@ -1,9 +1,8 @@
-name: Build Dynamic Release APK
+name: Instant Release APK
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -26,24 +25,22 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install Dependencies
+      - name: Install Dependencies & Sync
         run: |
           npm install
           npx cap sync android
 
-      - name: Clean & Build Fresh Android Debug APK
+      - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon
 
-      - name: Create Release and Upload Asset
+      - name: Force Overwrite Latest GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: "latest"
+          name: "Kali Command AI - Latest Build"
           files: android/app/build/outputs/apk/debug/app-debug.apk
-          name: Kali Command AI v1.0.3 Fresh APK
-          draft: false
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
