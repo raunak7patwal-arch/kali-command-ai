@@ -7,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const multer = require("multer");
 const { GoogleGenAI } = require("@google/genai");
 const { google } = require("googleapis");
+const { Pool } = require("pg");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -45,7 +46,87 @@ function createOAuthClient() {
 
 /* Temporary connection for current deployment.
    Persistent storage will be added separately. */
+/* ========================================
+   PERSISTENT YOUTUBE LOGIN STORAGE
+======================================== */
+
 let youtubeTokens = null;
+
+const DATABASE_URL = (process.env.DATABASE_URL || "").trim();
+
+let db = null;
+
+if (DATABASE_URL) {
+  db = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false
+  });
+}
+
+async function initializeDatabase() {
+  if (!db) {
+    console.log("Persistent database not configured.");
+    return;
+  }
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS youtube_connections (
+      id INTEGER PRIMARY KEY,
+      tokens JSONB NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  const result = await db.query(
+    "SELECT tokens FROM youtube_connections WHERE id = 1"
+  );
+
+  if (result.rows.length > 0) {
+    youtubeTokens = result.rows[0].tokens;
+    console.log("✓ Persistent YouTube login restored");
+  } else {
+    console.log("No saved YouTube login found");
+  }
+}
+
+async function saveYouTubeTokens(tokens) {
+  await saveYouTubeTokens(tokens);
+
+  if (!db) return;
+
+  await db.query(
+    `
+    INSERT INTO youtube_connections
+      (id, tokens, updated_at)
+    VALUES
+      (1, $1::jsonb, NOW())
+
+    ON CONFLICT (id)
+    DO UPDATE SET
+      tokens = EXCLUDED.tokens,
+      updated_at = NOW()
+    `,
+    [JSON.stringify(tokens)]
+  );
+
+  console.log("✓ YouTube login saved permanently");
+}
+
+async function deleteYouTubeTokens() {
+  youtubeTokens = null;
+
+  if (!db) return;
+
+  await db.query(
+    "DELETE FROM youtube_connections WHERE id = 1"
+  );
+
+  console.log("✓ Persistent YouTube login deleted");
+}
+
+
 
 function requireYouTubeConnection(req, res) {
   if (!youtubeTokens) {
@@ -183,7 +264,7 @@ app.get("/oauth2callback", async (req, res) => {
     const oauth2Client = createOAuthClient();
     const { tokens } = await oauth2Client.getToken(code);
 
-    youtubeTokens = tokens;
+    await saveYouTubeTokens(tokens);
 
     res.send(`
       <!doctype html>
@@ -560,8 +641,26 @@ app.post(
 
 /* SERVER START */
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(
-    `Kali Command AI backend running on port ${PORT}`
-  );
-});
+async function startServer() {
+
+  try {
+    await initializeDatabase();
+  } catch (error) {
+    console.error(
+      "Database initialization failed:",
+      error.message
+    );
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(
+      `Kali Command AI backend running on port ${PORT}`
+    );
+
+    console.log(
+      `Persistent storage: ${Boolean(db)}`
+    );
+  });
+}
+
+startServer();
