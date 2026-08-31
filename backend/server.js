@@ -6,9 +6,24 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const { GoogleGenAI } = require("@google/genai");
 const { google } = require("googleapis");
+const multer = require("multer");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 500 * 1024 * 1024
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype && file.mimetype.startsWith("video/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only video files are allowed."));
+    }
+  }
+});
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -397,6 +412,111 @@ app.post("/api/youtube/disconnect", (req, res) => {
   });
 
 });
+
+
+/* ========================================
+   AI BRAIN VIDEO UPLOAD
+======================================== */
+
+app.post("/api/brain/analyze", upload.single("video"), async (req, res) => {
+  try {
+
+    if (!req.file) {
+      return res.status(400).json({
+        ok: false,
+        error: "No video file was received."
+      });
+    }
+
+    const file = req.file;
+
+    const sizeMB = (
+      file.size / (1024 * 1024)
+    ).toFixed(2);
+
+    const prompt = `
+You are the AI Brain of a YouTube Command Center.
+
+A user uploaded a video with these details:
+
+Filename: ${file.originalname}
+File type: ${file.mimetype}
+File size: ${sizeMB} MB
+
+Create a YouTube publishing strategy based on the available file metadata.
+
+Return clearly labeled sections:
+
+TITLE:
+Provide one strong YouTube title.
+
+DESCRIPTION:
+Write an optimized YouTube description.
+
+TAGS:
+Provide relevant comma-separated tags.
+
+CONTENT STRATEGY:
+Briefly explain the likely content strategy.
+
+IMPORTANT:
+Do not claim you watched or visually analyzed the video unless actual video content was provided to you.
+Base the result only on the available metadata.
+`;
+
+    let analysis = {
+      title: "AI analysis ready",
+      description:
+        "Video received successfully. Connect Gemini AI for a generated publishing strategy.",
+      tags: [],
+      strategy:
+        "File validation completed successfully."
+    };
+
+    if (geminiConfigured()) {
+
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY
+      });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: prompt
+      });
+
+      analysis.raw =
+        response.text ||
+        "AI returned an empty response.";
+
+    }
+
+    res.json({
+      ok: true,
+
+      file: {
+        name: file.originalname,
+        type: file.mimetype,
+        sizeBytes: file.size,
+        sizeMB
+      },
+
+      analysis
+    });
+
+  } catch (error) {
+
+    console.error("AI Brain upload error:", error);
+
+    res.status(500).json({
+      ok: false,
+      error:
+        error.message ||
+        "Video upload analysis failed."
+    });
+
+  }
+});
+
 
 /* ========================================
    START SERVER

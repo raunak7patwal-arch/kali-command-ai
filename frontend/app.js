@@ -446,47 +446,161 @@ Do not invent channel statistics.
 
 
   /* ================================
-     AI BRAIN
+     AI BRAIN — REAL VIDEO UPLOAD
   ================================= */
 
-  const brainVideo =
-    document.getElementById("brainVideo");
-
-  const startBrain =
-    document.getElementById("startBrain");
+  const brainVideo = document.getElementById("brainVideo");
+  const startBrain = document.getElementById("startBrain");
 
   if (startBrain) {
 
     startBrain.addEventListener("click", () => {
 
-      if (
-        !brainVideo ||
-        !brainVideo.files ||
-        !brainVideo.files.length
-      ) {
+      if (!brainVideo || !brainVideo.files || !brainVideo.files.length) {
         setResult(
           "brainResults",
-          "<p>⚠️ Please select a video first.</p>"
+          "<p>⚠️ पहले एक वीडियो select करो।</p>"
         );
         return;
       }
 
       const file = brainVideo.files[0];
+      const backendBase =
+        window.API_BASE_URL || "https://kali-command-ai.onrender.com";
+
+      const formData = new FormData();
+      formData.append("video", file);
+
+      const xhr = new XMLHttpRequest();
+
+      startBrain.disabled = true;
 
       setResult(
         "brainResults",
         `
-          <h3>🧠 AI Brain</h3>
-          <p><strong>Selected:</strong>
-          ${escapeHtml(file.name)}</p>
-          <p>Video upload analysis can be connected in the next step.</p>
+        <h3>🧠 AI Brain शुरू हो रहा है</h3>
+        <p><strong>🎬 File:</strong> ${escapeHtml(file.name)}</p>
+        <p><strong>📦 Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+        <p id="brainProgressText">Preparing upload: 0.0%</p>
+        <progress id="brainProgress" value="0" max="100"></progress>
         `
       );
+
+      xhr.upload.addEventListener("progress", (event) => {
+
+        if (!event.lengthComputable) return;
+
+        const percent = (
+          event.loaded / event.total * 100
+        ).toFixed(1);
+
+        const progressText =
+          document.getElementById("brainProgressText");
+
+        const progressBar =
+          document.getElementById("brainProgress");
+
+        if (progressText) {
+          progressText.textContent =
+            `Uploading video: ${percent}%`;
+        }
+
+        if (progressBar) {
+          progressBar.value = percent;
+        }
+
+      });
+
+      xhr.upload.addEventListener("load", () => {
+
+        const progressText =
+          document.getElementById("brainProgressText");
+
+        if (progressText) {
+          progressText.textContent =
+            "Upload complete: 100.0% — AI is analyzing...";
+        }
+
+      });
+
+      xhr.addEventListener("load", () => {
+
+        startBrain.disabled = false;
+
+        let data;
+
+        try {
+          data = JSON.parse(xhr.responseText);
+        } catch {
+          setResult(
+            "brainResults",
+            `<h3>⚠️ Server Error</h3>
+             <p>Invalid response from server.</p>`
+          );
+          return;
+        }
+
+        if (xhr.status < 200 || xhr.status >= 300 || !data.ok) {
+          setResult(
+            "brainResults",
+            `<h3>⚠️ Upload Failed</h3>
+             <p>${escapeHtml(data.error || "Unknown error")}</p>`
+          );
+          return;
+        }
+
+        const raw =
+          data.analysis?.raw ||
+          data.analysis?.description ||
+          "Analysis completed.";
+
+        setResult(
+          "brainResults",
+          `
+          <h3>✅ AI Analysis Complete — 100.0%</h3>
+
+          <p><strong>🎬 File:</strong>
+          ${escapeHtml(data.file.name)}</p>
+
+          <p><strong>📦 Size:</strong>
+          ${escapeHtml(data.file.sizeMB)} MB</p>
+
+          <hr>
+
+          <h3>🤖 AI Publishing Strategy</h3>
+
+          <div class="ai-answer">
+            ${escapeHtml(raw).replace(/\n/g, "<br>")}
+          </div>
+
+          <p>अब अगला चरण: YouTube upload तैयार करना।</p>
+          `
+        );
+
+      });
+
+      xhr.addEventListener("error", () => {
+
+        startBrain.disabled = false;
+
+        setResult(
+          "brainResults",
+          `<h3>⚠️ Network Error</h3>
+           <p>Backend से connection नहीं हो पाया।</p>`
+        );
+
+      });
+
+      xhr.open(
+        "POST",
+        backendBase + "/api/brain/analyze"
+      );
+
+      xhr.send(formData);
 
     });
 
   }
-
 
   /* ================================
      THUMBNAIL LAB
