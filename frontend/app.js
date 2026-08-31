@@ -446,11 +446,29 @@ Do not invent channel statistics.
 
 
   /* ================================
-     AI BRAIN — REAL VIDEO UPLOAD
+     AI BRAIN — FULL VIDEO PIPELINE
   ================================= */
 
   const brainVideo = document.getElementById("brainVideo");
   const startBrain = document.getElementById("startBrain");
+
+  let preparedVideoFile = null;
+  let preparedAnalysis = null;
+
+  function formatBytes(bytes) {
+    if (!bytes) return "0 Bytes";
+    const units = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(2) + " " + units[i];
+  }
+
+  function formatTime(seconds) {
+    if (!isFinite(seconds) || seconds < 0) return "Calculating...";
+    if (seconds < 60) return Math.ceil(seconds) + " sec";
+    const m = Math.floor(seconds / 60);
+    const sec = Math.ceil(seconds % 60);
+    return m + " min " + sec + " sec";
+  }
 
   if (startBrain) {
 
@@ -459,12 +477,22 @@ Do not invent channel statistics.
       if (!brainVideo || !brainVideo.files || !brainVideo.files.length) {
         setResult(
           "brainResults",
-          "<p>⚠️ पहले एक वीडियो select करो।</p>"
+          "<h3>⚠️ Video Required</h3><p>पहले एक वीडियो select करो।</p>"
         );
         return;
       }
 
       const file = brainVideo.files[0];
+      preparedVideoFile = file;
+
+      if (!file.type.startsWith("video/")) {
+        setResult(
+          "brainResults",
+          "<h3>⚠️ Invalid File</h3><p>कृपया valid video file select करो।</p>"
+        );
+        return;
+      }
+
       const backendBase =
         window.API_BASE_URL || "https://kali-command-ai.onrender.com";
 
@@ -473,16 +501,36 @@ Do not invent channel statistics.
 
       const xhr = new XMLHttpRequest();
 
+      let uploadStart = Date.now();
+      let lastLoaded = 0;
+      let lastTime = uploadStart;
+      let retryCount = 0;
+      const maxRetries = 1;
+
       startBrain.disabled = true;
+      startBrain.textContent = "⏳ Processing...";
 
       setResult(
         "brainResults",
         `
-        <h3>🧠 AI Brain शुरू हो रहा है</h3>
+        <h3>🧠 AI VIDEO PIPELINE</h3>
+
         <p><strong>🎬 File:</strong> ${escapeHtml(file.name)}</p>
-        <p><strong>📦 Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
-        <p id="brainProgressText">Preparing upload: 0.0%</p>
-        <progress id="brainProgress" value="0" max="100"></progress>
+        <p><strong>📦 Size:</strong> ${formatBytes(file.size)}</p>
+
+        <hr>
+
+        <p id="brainStage"><strong>Stage:</strong> Preparing upload</p>
+        <p id="brainProgressText"><strong>Progress:</strong> 0.0%</p>
+        <p id="brainSpeed"><strong>Speed:</strong> Calculating...</p>
+        <p id="brainEta"><strong>Estimated time:</strong> Calculating...</p>
+
+        <progress
+          id="brainProgress"
+          value="0"
+          max="100"
+          style="width:100%;height:24px"
+        ></progress>
         `
       );
 
@@ -490,9 +538,35 @@ Do not invent channel statistics.
 
         if (!event.lengthComputable) return;
 
-        const percent = (
-          event.loaded / event.total * 100
-        ).toFixed(1);
+        const now = Date.now();
+        const elapsed = (now - uploadStart) / 1000;
+
+        const percent =
+          (event.loaded / event.total * 100);
+
+        const deltaBytes = event.loaded - lastLoaded;
+        const deltaTime = (now - lastTime) / 1000;
+
+        let speed = 0;
+
+        if (deltaTime > 0) {
+          speed = deltaBytes / deltaTime;
+        }
+
+        lastLoaded = event.loaded;
+        lastTime = now;
+
+        if (speed <= 0 && elapsed > 0) {
+          speed = event.loaded / elapsed;
+        }
+
+        const remainingBytes =
+          event.total - event.loaded;
+
+        const eta =
+          speed > 0
+            ? remainingBytes / speed
+            : Infinity;
 
         const progressText =
           document.getElementById("brainProgressText");
@@ -500,25 +574,68 @@ Do not invent channel statistics.
         const progressBar =
           document.getElementById("brainProgress");
 
+        const speedText =
+          document.getElementById("brainSpeed");
+
+        const etaText =
+          document.getElementById("brainEta");
+
+        const stage =
+          document.getElementById("brainStage");
+
         if (progressText) {
-          progressText.textContent =
-            `Uploading video: ${percent}%`;
+          progressText.innerHTML =
+            "<strong>Progress:</strong> " +
+            percent.toFixed(1) + "%";
         }
 
         if (progressBar) {
           progressBar.value = percent;
         }
 
+        if (speedText) {
+          speedText.innerHTML =
+            "<strong>Speed:</strong> " +
+            formatBytes(speed) + "/sec";
+        }
+
+        if (etaText) {
+          etaText.innerHTML =
+            "<strong>Estimated time:</strong> " +
+            formatTime(eta);
+        }
+
+        if (stage) {
+          stage.innerHTML =
+            "<strong>Stage:</strong> Uploading video to AI pipeline";
+        }
+
       });
 
       xhr.upload.addEventListener("load", () => {
 
+        const stage =
+          document.getElementById("brainStage");
+
         const progressText =
           document.getElementById("brainProgressText");
 
+        const etaText =
+          document.getElementById("brainEta");
+
+        if (stage) {
+          stage.innerHTML =
+            "<strong>Stage:</strong> 🤖 Gemini AI is creating publishing strategy";
+        }
+
         if (progressText) {
-          progressText.textContent =
-            "Upload complete: 100.0% — AI is analyzing...";
+          progressText.innerHTML =
+            "<strong>Progress:</strong> 100.0%";
+        }
+
+        if (etaText) {
+          etaText.innerHTML =
+            "<strong>Estimated time:</strong> AI processing...";
         }
 
       });
@@ -526,6 +643,7 @@ Do not invent channel statistics.
       xhr.addEventListener("load", () => {
 
         startBrain.disabled = false;
+        startBrain.textContent = "🧠 Analyze With AI Brain";
 
         let data;
 
@@ -534,59 +652,455 @@ Do not invent channel statistics.
         } catch {
           setResult(
             "brainResults",
-            `<h3>⚠️ Server Error</h3>
-             <p>Invalid response from server.</p>`
+            "<h3>⚠️ Server Error</h3><p>Server ने invalid response भेजा।</p>"
           );
           return;
         }
 
         if (xhr.status < 200 || xhr.status >= 300 || !data.ok) {
+
           setResult(
             "brainResults",
-            `<h3>⚠️ Upload Failed</h3>
-             <p>${escapeHtml(data.error || "Unknown error")}</p>`
+            `
+            <h3>⚠️ Pipeline Failed</h3>
+            <p>${escapeHtml(data.error || "Unknown error")}</p>
+            <button class="primary-btn" onclick="document.getElementById('startBrain').click()">
+              🔄 Retry
+            </button>
+            `
           );
+
           return;
         }
 
-        const raw =
-          data.analysis?.raw ||
-          data.analysis?.description ||
-          "Analysis completed.";
+        preparedAnalysis = data.analysis;
+
+        const tags =
+          Array.isArray(data.analysis.tags)
+            ? data.analysis.tags.join(", ")
+            : "";
 
         setResult(
           "brainResults",
           `
-          <h3>✅ AI Analysis Complete — 100.0%</h3>
+          <h3>✅ AI PIPELINE COMPLETE — 100.0%</h3>
 
-          <p><strong>🎬 File:</strong>
-          ${escapeHtml(data.file.name)}</p>
-
-          <p><strong>📦 Size:</strong>
-          ${escapeHtml(data.file.sizeMB)} MB</p>
+          <p><strong>🎬 Video:</strong> ${escapeHtml(data.file.name)}</p>
+          <p><strong>📦 Size:</strong> ${escapeHtml(data.file.sizeMB)} MB</p>
 
           <hr>
 
-          <h3>🤖 AI Publishing Strategy</h3>
+          <h3>✏️ Review Publishing Details</h3>
 
+          <label><strong>✨ Title</strong></label>
+          <input
+            id="publishTitle"
+            type="text"
+            value="${escapeHtml(data.analysis.title || "")}"
+            style="width:100%;padding:12px;margin:8px 0"
+          >
+
+          <label><strong>📝 Description</strong></label>
+          <textarea
+            id="publishDescription"
+            style="width:100%;min-height:150px;padding:12px;margin:8px 0"
+          >${escapeHtml(data.analysis.description || "")}</textarea>
+
+          <label><strong>🏷️ Tags (comma separated)</strong></label>
+          <textarea
+            id="publishTags"
+            style="width:100%;min-height:80px;padding:12px;margin:8px 0"
+          >${escapeHtml(tags)}</textarea>
+
+          <h3>📊 AI Strategy</h3>
           <div class="ai-answer">
-            ${escapeHtml(raw).replace(/\n/g, "<br>")}
+            ${escapeHtml(data.analysis.strategy || "Strategy ready.").replace(/\n/g, "<br>")}
           </div>
 
-          <p>अब अगला चरण: YouTube upload तैयार करना।</p>
+          <hr>
+
+          <button
+            class="primary-btn"
+            id="publishToYouTube"
+            style="margin-top:15px"
+          >
+            🚀 Publish to YouTube
+          </button>
+
+          <p id="publishStatus" style="margin-top:12px"></p>
           `
         );
+
+        const publishButton =
+          document.getElementById("publishToYouTube");
+
+        if (publishButton) {
+
+          publishButton.addEventListener("click", async () => {
+
+            const title =
+              document.getElementById("publishTitle")?.value.trim();
+
+            const description =
+              document.getElementById("publishDescription")?.value || "";
+
+            const tagsText =
+              document.getElementById("publishTags")?.value || "";
+
+            const status =
+              document.getElementById("publishStatus");
+
+            if (!title) {
+              if (status) {
+                status.textContent =
+                  "⚠️ Title खाली नहीं हो सकता।";
+              }
+              return;
+            }
+
+            if (!preparedVideoFile) {
+              if (status) {
+                status.textContent =
+                  "⚠️ Video file नहीं मिला। दोबारा select करो।";
+              }
+              return;
+            }
+
+            const tags = tagsText
+              .split(",")
+              .map(tag => tag.trim())
+              .filter(Boolean)
+              .slice(0, 30);
+
+            publishButton.disabled = true;
+
+            if (status) {
+              status.textContent =
+                "🔍 Checking YouTube connection...";
+            }
+
+            try {
+
+              const connectionResponse =
+                await fetch(
+                  backendBase + "/api/youtube/status"
+                );
+
+              const connectionData =
+                await connectionResponse.json();
+
+              if (!connectionData.connected) {
+
+                if (status) {
+                  status.innerHTML =
+                    `⚠️ YouTube connected नहीं है। पहले channel connect करो।`;
+                }
+
+                publishButton.disabled = false;
+                return;
+              }
+
+              if (status) {
+                status.textContent =
+                  "🚀 Publishing system तैयार है...";
+              }
+
+              if (status) {
+                status.innerHTML = `
+                  <strong>🚀 Starting YouTube upload...</strong><br>
+                  <span id="publishProgressText">Preparing: 0.0%</span><br>
+                  <span id="publishSpeed">Speed: Calculating...</span><br>
+                  <span id="publishEta">Estimated time: Calculating...</span><br>
+                  <progress
+                    id="publishProgress"
+                    value="0"
+                    max="100"
+                    style="width:100%;height:22px;margin-top:10px"
+                  ></progress>
+                `;
+              }
+
+              const publishData = new FormData();
+
+              publishData.append(
+                "video",
+                preparedVideoFile
+              );
+
+              publishData.append(
+                "title",
+                title
+              );
+
+              publishData.append(
+                "description",
+                description
+              );
+
+              publishData.append(
+                "tags",
+                JSON.stringify(tags)
+              );
+
+              const publishXhr =
+                new XMLHttpRequest();
+
+              const publishStart =
+                Date.now();
+
+              let previousLoaded = 0;
+              let previousTime = publishStart;
+
+              publishXhr.upload.addEventListener(
+                "progress",
+                function(event) {
+
+                  if (!event.lengthComputable) return;
+
+                  const percent =
+                    event.loaded /
+                    event.total *
+                    100;
+
+                  const now = Date.now();
+
+                  const timeDiff =
+                    (now - previousTime) / 1000;
+
+                  const bytesDiff =
+                    event.loaded -
+                    previousLoaded;
+
+                  let speed = 0;
+
+                  if (timeDiff > 0) {
+                    speed =
+                      bytesDiff / timeDiff;
+                  }
+
+                  previousLoaded =
+                    event.loaded;
+
+                  previousTime = now;
+
+                  const remaining =
+                    event.total -
+                    event.loaded;
+
+                  const eta =
+                    speed > 0
+                      ? remaining / speed
+                      : Infinity;
+
+                  const progressText =
+                    document.getElementById(
+                      "publishProgressText"
+                    );
+
+                  const progress =
+                    document.getElementById(
+                      "publishProgress"
+                    );
+
+                  const speedText =
+                    document.getElementById(
+                      "publishSpeed"
+                    );
+
+                  const etaText =
+                    document.getElementById(
+                      "publishEta"
+                    );
+
+                  if (progressText) {
+                    progressText.textContent =
+                      "Uploading to YouTube: " +
+                      percent.toFixed(1) + "%";
+                  }
+
+                  if (progress) {
+                    progress.value = percent;
+                  }
+
+                  if (speedText) {
+                    speedText.textContent =
+                      "Speed: " +
+                      formatBytes(speed) +
+                      "/sec";
+                  }
+
+                  if (etaText) {
+                    etaText.textContent =
+                      "Estimated time: " +
+                      formatTime(eta);
+                  }
+
+                }
+              );
+
+              publishXhr.upload.addEventListener(
+                "load",
+                function() {
+
+                  const progressText =
+                    document.getElementById(
+                      "publishProgressText"
+                    );
+
+                  if (progressText) {
+                    progressText.textContent =
+                      "100.0% — YouTube is processing...";
+                  }
+
+                }
+              );
+
+              publishXhr.addEventListener(
+                "load",
+                function() {
+
+                  publishButton.disabled = false;
+
+                  let publishResponse;
+
+                  try {
+
+                    publishResponse =
+                      JSON.parse(
+                        publishXhr.responseText
+                      );
+
+                  } catch {
+
+                    if (status) {
+                      status.innerHTML =
+                        "⚠️ Invalid response from publishing server.";
+                    }
+
+                    return;
+                  }
+
+                  if (
+                    publishXhr.status < 200 ||
+                    publishXhr.status >= 300 ||
+                    !publishResponse.ok
+                  ) {
+
+                    if (status) {
+                      status.innerHTML =
+                        "⚠️ Publishing failed: " +
+                        escapeHtml(
+                          publishResponse.error ||
+                          "Unknown error"
+                        );
+                    }
+
+                    return;
+                  }
+
+                  const videoId =
+                    publishResponse.video?.id;
+
+                  if (status) {
+
+                    status.innerHTML = `
+                      <h3>✅ VIDEO UPLOADED SUCCESSFULLY!</h3>
+
+                      <p>
+                        <strong>Title:</strong>
+                        ${escapeHtml(
+                          publishResponse.video?.title ||
+                          title
+                        )}
+                      </p>
+
+                      <p>
+                        <strong>Privacy:</strong>
+                        ${escapeHtml(
+                          publishResponse.video?.privacyStatus ||
+                          "private"
+                        )}
+                      </p>
+
+                      ${
+                        videoId
+                        ? `<p>
+                            <strong>Video ID:</strong>
+                            ${escapeHtml(videoId)}
+                          </p>`
+                        : ""
+                      }
+
+                      <p>
+                        🎉 Your video has been sent to your authorized YouTube channel.
+                      </p>
+                    `;
+
+                  }
+
+                }
+              );
+
+              publishXhr.addEventListener(
+                "error",
+                function() {
+
+                  publishButton.disabled = false;
+
+                  if (status) {
+                    status.innerHTML =
+                      "⚠️ Network error while publishing to YouTube.";
+                  }
+
+                }
+              );
+
+              publishXhr.open(
+                "POST",
+                backendBase +
+                "/api/youtube/publish"
+              );
+
+              publishXhr.send(
+                publishData
+              );
+
+            } catch (error) {
+
+              console.error(error);
+
+              if (status) {
+                status.textContent =
+                  "⚠️ Connection error: " + error.message;
+              }
+
+            } finally {
+
+              publishButton.disabled = false;
+
+            }
+
+          });
+
+        }
 
       });
 
       xhr.addEventListener("error", () => {
 
         startBrain.disabled = false;
+        startBrain.textContent =
+          "🧠 Analyze With AI Brain";
 
         setResult(
           "brainResults",
-          `<h3>⚠️ Network Error</h3>
-           <p>Backend से connection नहीं हो पाया।</p>`
+          `
+          <h3>⚠️ Network Error</h3>
+          <p>Backend से connection नहीं हो पाया।</p>
+          <button class="primary-btn" onclick="document.getElementById('startBrain').click()">
+            🔄 Retry Upload
+          </button>
+          `
         );
 
       });

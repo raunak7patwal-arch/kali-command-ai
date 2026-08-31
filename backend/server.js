@@ -4,41 +4,24 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const multer = require("multer");
 const { GoogleGenAI } = require("@google/genai");
 const { google } = require("googleapis");
-const multer = require("multer");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+
+app.use(cors());
+app.use(express.json({ limit: "2mb" }));
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(rateLimit({ windowMs: 60 * 1000, max: 60 }));
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 500 * 1024 * 1024
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype && file.mimetype.startsWith("video/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only video files are allowed."));
-    }
   }
 });
-
-app.use(cors());
-app.use(express.json({ limit: "1mb" }));
-app.use(helmet({
-  crossOriginResourcePolicy: false
-}));
-
-app.use(rateLimit({
-  windowMs: 60 * 1000,
-  max: 60
-}));
-
-/* ========================================
-   CONFIGURATION
-======================================== */
 
 function geminiConfigured() {
   return Boolean(process.env.GEMINI_API_KEY);
@@ -60,16 +43,33 @@ function createOAuthClient() {
   );
 }
 
-/* ========================================
-   TEMPORARY TOKEN STORAGE
-   For local development/testing only.
-======================================== */
-
+/* Temporary connection for current deployment.
+   Persistent storage will be added separately. */
 let youtubeTokens = null;
 
-/* ========================================
-   HEALTH
-======================================== */
+function requireYouTubeConnection(req, res) {
+  if (!youtubeTokens) {
+    res.status(401).json({
+      ok: false,
+      error: "YouTube channel is not connected."
+    });
+    return false;
+  }
+  return true;
+}
+
+function getYouTubeClient() {
+  const oauth2Client = createOAuthClient();
+  oauth2Client.setCredentials(youtubeTokens);
+
+  return {
+    oauth2Client,
+    youtube: google.youtube({
+      version: "v3",
+      auth: oauth2Client
+    })
+  };
+}
 
 app.get("/api/health", (req, res) => {
   res.json({
@@ -77,20 +77,12 @@ app.get("/api/health", (req, res) => {
     service: "Kali Command AI Backend",
     geminiConfigured: geminiConfigured(),
     googleOAuthConfigured: googleConfigured(),
-    hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
-    hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-    hasGoogleRedirectUri: !!process.env.GOOGLE_REDIRECT_URI,
     youtubeConnected: Boolean(youtubeTokens)
   });
 });
 
-/* ========================================
-   GEMINI AI
-======================================== */
-
 app.post("/api/ai", async (req, res) => {
   try {
-
     const { prompt } = req.body || {};
 
     if (!prompt || typeof prompt !== "string") {
@@ -116,63 +108,30 @@ app.post("/api/ai", async (req, res) => {
       contents: prompt
     });
 
-    const answer =
-      response.text ||
-      "The AI returned an empty response.";
-
     res.json({
       ok: true,
-      answer
+      answer: response.text || "AI returned an empty response."
     });
 
   } catch (error) {
-
     console.error("Gemini error:", error);
-
     res.status(500).json({
       ok: false,
       error: error.message || "AI request failed."
     });
-
   }
 });
 
-
-/* ========================================
-   OAUTH SAFE DIAGNOSTICS
-======================================== */
-
-app.get("/api/oauth/diagnostics", async (req, res) => {
+app.get("/api/oauth/diagnostics", (req, res) => {
   const clientId = (process.env.GOOGLE_CLIENT_ID || "").trim();
   const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || "").trim();
   const redirectUri = (process.env.GOOGLE_REDIRECT_URI || "").trim();
 
   const problems = [];
-  const warnings = [];
 
   if (!clientId) problems.push("GOOGLE_CLIENT_ID is missing");
   if (!clientSecret) problems.push("GOOGLE_CLIENT_SECRET is missing");
   if (!redirectUri) problems.push("GOOGLE_REDIRECT_URI is missing");
-
-  if (clientId && !clientId.endsWith(".apps.googleusercontent.com")) {
-    warnings.push("Client ID does not look like a standard Google OAuth Web Client ID");
-  }
-
-  if (redirectUri) {
-    try {
-      const u = new URL(redirectUri);
-
-      if (u.protocol !== "https:" && u.hostname !== "localhost") {
-        problems.push("Production redirect URI should use HTTPS");
-      }
-
-      if (u.pathname !== "/oauth2callback") {
-        warnings.push("Redirect path is not /oauth2callback; verify it matches Google Cloud exactly");
-      }
-    } catch {
-      problems.push("GOOGLE_REDIRECT_URI is not a valid URL");
-    }
-  }
 
   res.json({
     ok: problems.length === 0,
@@ -181,170 +140,89 @@ app.get("/api/oauth/diagnostics", async (req, res) => {
       clientSecretPresent: Boolean(clientSecret),
       redirectUriPresent: Boolean(redirectUri)
     },
-    clientIdPreview: clientId
-      ? clientId.slice(0, 12) + "..." +
-        clientId.slice(-28)
-      : null,
     redirectUri,
-    problems,
-    warnings,
-    nextStep:
-      problems.length
-        ? "Fix the configuration problems listed above."
-        : "Configuration looks structurally valid. If Google still returns invalid_client, verify that CLIENT_ID and CLIENT_SECRET belong to the exact same OAuth client."
+    problems
   });
 });
 
-
-/* ========================================
-   YOUTUBE GOOGLE LOGIN
-======================================== */
+/* YouTube OAuth */
 
 app.get("/auth/youtube", (req, res) => {
-
   if (!googleConfigured()) {
-    return res.status(503).send(
-      "Google OAuth is not configured."
-    );
+    return res.status(503).send("Google OAuth is not configured.");
   }
 
   const oauth2Client = createOAuthClient();
 
-  const scopes = [
-    "https://www.googleapis.com/auth/youtube.readonly",
-    "https://www.googleapis.com/auth/youtube.upload"
-  ];
-
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
-    scope: scopes
+    scope: [
+      "https://www.googleapis.com/auth/youtube.readonly",
+      "https://www.googleapis.com/auth/youtube.upload"
+    ]
   });
 
   res.redirect(authUrl);
 });
 
-/* ========================================
-   OAUTH CALLBACK
-======================================== */
-
 app.get("/oauth2callback", async (req, res) => {
-
   try {
-
-    if (!googleConfigured()) {
-      return res.status(503).send(
-        "Google OAuth is not configured."
-      );
-    }
-
     const { code, error } = req.query;
 
     if (error) {
       return res.status(400).send(
-        `Google authorization failed: ${error}`
+        "Google authorization failed: " + error
       );
     }
 
     if (!code) {
-      return res.status(400).send(
-        "Authorization code missing."
-      );
+      return res.status(400).send("Authorization code missing.");
     }
 
     const oauth2Client = createOAuthClient();
-
-    const { tokens } =
-      await oauth2Client.getToken(code);
+    const { tokens } = await oauth2Client.getToken(code);
 
     youtubeTokens = tokens;
 
     res.send(`
+      <!doctype html>
       <html>
-        <head>
-          <meta name="viewport"
-                content="width=device-width, initial-scale=1">
-          <title>YouTube Connected</title>
-        </head>
-
-        <body style="
-          font-family:Arial;
-          background:#111;
-          color:white;
-          text-align:center;
-          padding:40px;
-        ">
-
-          <h1>✅ YouTube Connected!</h1>
-
-          <p>
-            Authorization was successful.
-          </p>
-
-          <p>
-            You can return to Kali Command AI.
-          </p>
-
-        </body>
+      <head>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>YouTube Connected</title>
+      </head>
+      <body style="font-family:Arial;background:#111;color:white;text-align:center;padding:40px">
+        <h1>✅ YouTube Connected!</h1>
+        <p>You can safely return to Kali Command AI.</p>
+      </body>
       </html>
     `);
 
   } catch (error) {
-
     console.error("OAuth callback error:", error);
-
     res.status(500).send(
-      "OAuth connection failed: " +
-      error.message
+      "OAuth connection failed: " + error.message
     );
-
   }
 });
 
-/* ========================================
-   CONNECTION STATUS
-======================================== */
-
 app.get("/api/youtube/status", (req, res) => {
-
   res.json({
     ok: true,
     googleOAuthConfigured: googleConfigured(),
     connected: Boolean(youtubeTokens)
   });
-
 });
 
-/* ========================================
-   CHANNEL INFORMATION
-======================================== */
-
 app.get("/api/youtube/channel", async (req, res) => {
-
   try {
+    if (!requireYouTubeConnection(req, res)) return;
 
-    if (!youtubeTokens) {
-      return res.status(401).json({
-        ok: false,
-        error: "YouTube channel is not connected."
-      });
-    }
-
-    const oauth2Client = createOAuthClient();
-
-    oauth2Client.setCredentials(youtubeTokens);
-
-    const youtube = google.youtube({
-      version: "v3",
-      auth: oauth2Client
-    });
+    const { youtube } = getYouTubeClient();
 
     const response = await youtube.channels.list({
-      part: [
-        "snippet",
-        "statistics",
-        "contentDetails"
-      ],
+      part: ["snippet", "statistics", "contentDetails"],
       mine: true
     });
 
@@ -359,177 +237,331 @@ app.get("/api/youtube/channel", async (req, res) => {
 
     res.json({
       ok: true,
-
       channel: {
         id: channel.id,
-
         title: channel.snippet?.title,
-
-        description:
-          channel.snippet?.description,
-
-        thumbnails:
-          channel.snippet?.thumbnails,
-
-        publishedAt:
-          channel.snippet?.publishedAt,
-
-        statistics:
-          channel.statistics,
-
-        uploadsPlaylist:
-          channel.contentDetails
-            ?.relatedPlaylists
-            ?.uploads
+        description: channel.snippet?.description,
+        thumbnails: channel.snippet?.thumbnails,
+        statistics: channel.statistics
       }
     });
 
   } catch (error) {
-
-    console.error("YouTube channel error:", error);
-
+    console.error("Channel error:", error);
     res.status(500).json({
       ok: false,
-      error: error.message ||
-        "Failed to load channel information."
+      error: error.message || "Failed to load channel."
     });
-
   }
-
 });
 
-/* ========================================
-   DISCONNECT
-======================================== */
-
 app.post("/api/youtube/disconnect", (req, res) => {
-
   youtubeTokens = null;
 
   res.json({
     ok: true,
-    message: "YouTube channel disconnected."
+    message: "YouTube disconnected."
   });
-
 });
 
+/* AI BRAIN ANALYSIS */
 
-/* ========================================
-   AI BRAIN VIDEO UPLOAD
-======================================== */
+app.post(
+  "/api/brain/analyze",
+  upload.single("video"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          ok: false,
+          error: "No video file received."
+        });
+      }
 
-app.post("/api/brain/analyze", upload.single("video"), async (req, res) => {
-  try {
+      const file = req.file;
 
-    if (!req.file) {
-      return res.status(400).json({
-        ok: false,
-        error: "No video file was received."
-      });
-    }
+      if (!file.mimetype.startsWith("video/")) {
+        return res.status(400).json({
+          ok: false,
+          error: "Please upload a valid video file."
+        });
+      }
 
-    const file = req.file;
+      const sizeMB = (
+        file.size / 1024 / 1024
+      ).toFixed(2);
 
-    const sizeMB = (
-      file.size / (1024 * 1024)
-    ).toFixed(2);
+      let title = file.originalname
+        .replace(/\.[^.]+$/, "")
+        .replace(/[_-]+/g, " ");
 
-    const prompt = `
-You are the AI Brain of a YouTube Command Center.
+      let description =
+        "Video prepared with Kali Command AI.";
 
-A user uploaded a video with these details:
+      let tags = [];
+
+      let strategy =
+        "Video file validated successfully.";
+
+      let raw = "";
+
+      if (geminiConfigured()) {
+
+        const prompt = `
+You are an expert YouTube publishing assistant.
+
+The user uploaded a video file.
 
 Filename: ${file.originalname}
-File type: ${file.mimetype}
-File size: ${sizeMB} MB
+Type: ${file.mimetype}
+Size: ${sizeMB} MB
 
-Create a YouTube publishing strategy based on the available file metadata.
+You do NOT have access to the actual visual content.
 
-Return clearly labeled sections:
+Based only on the filename and metadata, return EXACTLY this format:
 
-TITLE:
-Provide one strong YouTube title.
+TITLE: one compelling title
 
 DESCRIPTION:
-Write an optimized YouTube description.
+A useful YouTube description.
 
 TAGS:
-Provide relevant comma-separated tags.
+tag1, tag2, tag3, tag4, tag5
 
-CONTENT STRATEGY:
-Briefly explain the likely content strategy.
+STRATEGY:
+A short publishing recommendation.
 
-IMPORTANT:
-Do not claim you watched or visually analyzed the video unless actual video content was provided to you.
-Base the result only on the available metadata.
+Do not claim you watched the video.
 `;
 
-    let analysis = {
-      title: "AI analysis ready",
-      description:
-        "Video received successfully. Connect Gemini AI for a generated publishing strategy.",
-      tags: [],
-      strategy:
-        "File validation completed successfully."
-    };
+        const ai = new GoogleGenAI({
+          apiKey: process.env.GEMINI_API_KEY
+        });
 
-    if (geminiConfigured()) {
+        const response = await ai.models.generateContent({
+          model: "gemini-3.6-flash",
+          contents: prompt
+        });
 
-      const ai = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY
+        raw = response.text || "";
+
+        const titleMatch =
+          raw.match(/TITLE:\s*([^\n]+)/i);
+
+        const descriptionMatch =
+          raw.match(
+            /DESCRIPTION:\s*([\s\S]*?)(?=\nTAGS:|\nSTRATEGY:|$)/i
+          );
+
+        const tagsMatch =
+          raw.match(
+            /TAGS:\s*([\s\S]*?)(?=\nSTRATEGY:|$)/i
+          );
+
+        const strategyMatch =
+          raw.match(
+            /STRATEGY:\s*([\s\S]*)$/i
+          );
+
+        if (titleMatch?.[1]) {
+          title = titleMatch[1].trim();
+        }
+
+        if (descriptionMatch?.[1]) {
+          description =
+            descriptionMatch[1].trim();
+        }
+
+        if (tagsMatch?.[1]) {
+          tags = tagsMatch[1]
+            .split(",")
+            .map(x => x.trim())
+            .filter(Boolean)
+            .slice(0, 30);
+        }
+
+        if (strategyMatch?.[1]) {
+          strategy =
+            strategyMatch[1].trim();
+        }
+      }
+
+      res.json({
+        ok: true,
+        file: {
+          name: file.originalname,
+          type: file.mimetype,
+          sizeBytes: file.size,
+          sizeMB
+        },
+        analysis: {
+          title,
+          description,
+          tags,
+          strategy,
+          raw
+        }
       });
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: prompt
+    } catch (error) {
+      console.error("AI Brain error:", error);
+
+      res.status(500).json({
+        ok: false,
+        error: error.message ||
+          "Video analysis failed."
       });
-
-      analysis.raw =
-        response.text ||
-        "AI returned an empty response.";
-
     }
-
-    res.json({
-      ok: true,
-
-      file: {
-        name: file.originalname,
-        type: file.mimetype,
-        sizeBytes: file.size,
-        sizeMB
-      },
-
-      analysis
-    });
-
-  } catch (error) {
-
-    console.error("AI Brain upload error:", error);
-
-    res.status(500).json({
-      ok: false,
-      error:
-        error.message ||
-        "Video upload analysis failed."
-    });
-
   }
-});
+);
 
 
 /* ========================================
-   START SERVER
+   YOUTUBE VIDEO PUBLISH
 ======================================== */
 
-app.listen(PORT, "0.0.0.0", () => {
+app.post(
+  "/api/youtube/publish",
+  upload.single("video"),
+  async (req, res) => {
 
+    try {
+
+      if (!requireYouTubeConnection(req, res)) return;
+
+      if (!req.file) {
+        return res.status(400).json({
+          ok: false,
+          error: "No video file received."
+        });
+      }
+
+      const file = req.file;
+
+      if (!file.mimetype.startsWith("video/")) {
+        return res.status(400).json({
+          ok: false,
+          error: "Only video files can be published."
+        });
+      }
+
+      const title =
+        String(req.body.title || "").trim();
+
+      const description =
+        String(req.body.description || "");
+
+      let tags = [];
+
+      try {
+        tags = JSON.parse(req.body.tags || "[]");
+
+        if (!Array.isArray(tags)) {
+          tags = [];
+        }
+
+      } catch {
+        tags = [];
+      }
+
+      tags = tags
+        .map(tag => String(tag).trim())
+        .filter(Boolean)
+        .slice(0, 30);
+
+      if (!title) {
+        return res.status(400).json({
+          ok: false,
+          error: "Video title is required."
+        });
+      }
+
+      if (title.length > 100) {
+        return res.status(400).json({
+          ok: false,
+          error: "YouTube title cannot exceed 100 characters."
+        });
+      }
+
+      if (description.length > 5000) {
+        return res.status(400).json({
+          ok: false,
+          error: "YouTube description cannot exceed 5000 characters."
+        });
+      }
+
+      const { youtube } = getYouTubeClient();
+
+      console.log(
+        "Starting YouTube upload:",
+        file.originalname
+      );
+
+      const response = await youtube.videos.insert({
+        part: [
+          "snippet",
+          "status"
+        ],
+        requestBody: {
+          snippet: {
+            title,
+            description,
+            tags
+          },
+          status: {
+            privacyStatus: "private",
+            selfDeclaredMadeForKids: false
+          }
+        },
+        media: {
+          mimeType: file.mimetype,
+          body: require("stream").Readable.from(
+            file.buffer
+          )
+        }
+      });
+
+      console.log(
+        "YouTube upload completed:",
+        response.data.id
+      );
+
+      res.json({
+        ok: true,
+        message: "Video uploaded successfully to YouTube.",
+        video: {
+          id: response.data.id,
+          title: response.data.snippet?.title || title,
+          privacyStatus:
+            response.data.status?.privacyStatus ||
+            "private"
+        }
+      });
+
+    } catch (error) {
+
+      console.error(
+        "YouTube publish error:",
+        error
+      );
+
+      res.status(500).json({
+        ok: false,
+        error:
+          error.message ||
+          "YouTube publishing failed."
+      });
+
+    }
+
+  }
+);
+
+
+/* SERVER START */
+
+app.listen(PORT, "0.0.0.0", () => {
   console.log(
     `Kali Command AI backend running on port ${PORT}`
   );
-
-  console.log(
-    `Health: http://127.0.0.1:${PORT}/api/health`
-  );
-
 });
