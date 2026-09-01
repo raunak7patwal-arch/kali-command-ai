@@ -351,12 +351,23 @@ app.post("/api/youtube/disconnect", (req, res) => {
   });
 });
 
-/* AI BRAIN ANALYSIS */
+/* AI BRAIN ANALYSIS — ACTUAL VIDEO FRAME ANALYSIS */
+
+const { execFile } = require("child_process");
+const { promisify } = require("util");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+
+const execFileAsync = promisify(execFile);
 
 app.post(
   "/api/brain/analyze",
   upload.single("video"),
   async (req, res) => {
+
+    let tempDir = null;
+
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -367,137 +378,321 @@ app.post(
 
       const file = req.file;
 
-      if (!file.mimetype.startsWith("video/")) {
+      if (!file.mimetype || !file.mimetype.startsWith("video/")) {
         return res.status(400).json({
           ok: false,
           error: "Please upload a valid video file."
         });
       }
 
-      const sizeMB = (
-        file.size / 1024 / 1024
-      ).toFixed(2);
+      if (!geminiConfigured()) {
+        return res.status(503).json({
+          ok: false,
+          error: "Gemini API key is not configured."
+        });
+      }
 
-      let title = file.originalname
-        .replace(/\.[^.]+$/, "")
-        .replace(/[_-]+/g, " ");
+      tempDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "video-ai-")
+      );
 
-      let description =
-        "Video prepared with Kali Command AI.";
+      const ext =
+        path.extname(file.originalname) || ".mp4";
 
-      let tags = [];
+      const videoPath =
+        path.join(tempDir, "video" + ext);
 
-      let strategy =
-        "Video file validated successfully.";
+      fs.writeFileSync(videoPath, file.buffer);
 
-      let raw = "";
+      let duration = 60;
 
-      if (geminiConfigured()) {
+      try {
+        const probe = await execFileAsync(
+          "ffprobe",
+          [
+            "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            videoPath
+          ]
+        );
 
-        const prompt = `
-You are an expert YouTube publishing assistant.
+        const value = parseFloat(probe.stdout.trim());
 
-The user uploaded a video file.
+        if (Number.isFinite(value) && value > 0) {
+          duration = value;
+        }
+      } catch (e) {
+        console.error("Duration probe failed:", e.message);
+      }
 
-Filename: ${file.originalname}
-Type: ${file.mimetype}
-Size: ${sizeMB} MB
+      const timestamps = [];
+      const frameCount = 10;
 
-You do NOT have access to the actual visual content.
+      for (let i = 0; i < frameCount; i++) {
+        timestamps.push(
+          Math.max(
+            0,
+            Math.min(
+              duration - 0.1,
+              duration * ((i + 0.5) / frameCount)
+            )
+          )
+        );
+      }
 
-Based only on the filename and metadata, return EXACTLY this format:
+      const parts = [];
+      let framesAnalyzed = 0;
 
-TITLE: one compelling title
+      const prompt = `
+You are an expert YouTube content analyst.
+
+You are receiving representative frames extracted across
+different moments of the ACTUAL uploaded video.
+
+Analyze the visual content across ALL frames together.
+
+Your goal is to understand what the video is actually about.
+
+Do NOT primarily rely on the filename.
+Do NOT invent events that are not visually supported.
+Do NOT claim certainty about details you cannot see.
+
+Create metadata designed for accurate discoverability and
+strong audience relevance.
+
+Return ONLY valid JSON in exactly this format:
+
+{
+  "title": "ONE final compelling title",
+  "description": "A detailed natural description based on the actual visual content",
+  "tags": ["relevant tag 1", "relevant tag 2"],
+  "hashtags": ["#RelevantTag"],
+  "strategy": "A short practical publishing recommendation"
+}
+
+RULES:
+
+TITLE:
+- EXACTLY ONE title.
+- Maximum 100 characters.
+- Accurate to the actual video.
+- Compelling and searchable.
+- No misleading clickbait.
 
 DESCRIPTION:
-A useful YouTube description.
+- Detailed and natural.
+- Explain what viewers actually see.
+- Use relevant searchable concepts naturally.
+- No keyword stuffing.
+- No fake social media links.
+- No invented timestamps.
 
 TAGS:
-tag1, tag2, tag3, tag4, tag5
+- 25 to 30 tags.
+- Every tag must be genuinely relevant.
+- No duplicates.
+- No unrelated trending topics.
+
+HASHTAGS:
+- 3 to 5 genuinely relevant hashtags.
 
 STRATEGY:
-A short publishing recommendation.
+- Short and specific.
+- Based on the apparent content and audience.
 
-Do not claim you watched the video.
+Analyze all supplied frames as one video.
 `;
 
-        const ai = new GoogleGenAI({
-          apiKey: process.env.GEMINI_API_KEY
-        });
+      parts.push({ text: prompt });
 
-        const response = await ai.models.generateContent({
+      for (let i = 0; i < timestamps.length; i++) {
+
+        const framePath =
+          path.join(tempDir, `frame-${i}.jpg`);
+
+        try {
+          await execFileAsync(
+            "ffmpeg",
+            [
+              "-y",
+              "-ss", String(timestamps[i]),
+              "-i", videoPath,
+              "-frames:v", "1",
+              "-vf", "scale=640:-2",
+              "-q:v", "4",
+              framePath
+            ],
+            { maxBuffer: 10 * 1024 * 1024 }
+          );
+
+          if (
+            fs.existsSync(framePath) &&
+            fs.statSync(framePath).size > 1000
+          ) {
+
+            const base64 =
+              fs.readFileSync(framePath).toString("base64");
+
+            parts.push({
+              text: `Video frame at approximately ${timestamps[i].toFixed(1)} seconds`
+            });
+
+            parts.push({
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: base64
+              }
+            });
+
+            framesAnalyzed++;
+          }
+
+        } catch (frameError) {
+          console.error(
+            "Frame extraction failed:",
+            frameError.message
+          );
+        }
+      }
+
+      if (framesAnalyzed === 0) {
+        throw new Error(
+          "Could not extract frames from the video."
+        );
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY
+      });
+
+      const response =
+        await ai.models.generateContent({
           model: "gemini-3.6-flash",
-          contents: prompt
+          contents: [{
+            role: "user",
+            parts
+          }]
         });
 
-        raw = response.text || "";
+      const raw = (response.text || "").trim();
 
-        const titleMatch =
-          raw.match(/TITLE:\s*([^\n]+)/i);
+      let clean = raw
+        .replace(/^```json/i, "")
+        .replace(/^```/i, "")
+        .replace(/```$/i, "")
+        .trim();
 
-        const descriptionMatch =
-          raw.match(
-            /DESCRIPTION:\s*([\s\S]*?)(?=\nTAGS:|\nSTRATEGY:|$)/i
-          );
+      const first = clean.indexOf("{");
+      const last = clean.lastIndexOf("}");
 
-        const tagsMatch =
-          raw.match(
-            /TAGS:\s*([\s\S]*?)(?=\nSTRATEGY:|$)/i
-          );
+      if (first >= 0 && last > first) {
+        clean = clean.slice(first, last + 1);
+      }
 
-        const strategyMatch =
-          raw.match(
-            /STRATEGY:\s*([\s\S]*)$/i
-          );
+      let data;
 
-        if (titleMatch?.[1]) {
-          title = titleMatch[1].trim();
-        }
+      try {
+        data = JSON.parse(clean);
+      } catch (e) {
+        throw new Error("AI returned invalid JSON.");
+      }
 
-        if (descriptionMatch?.[1]) {
-          description =
-            descriptionMatch[1].trim();
-        }
+      const title =
+        String(data.title || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 100);
 
-        if (tagsMatch?.[1]) {
-          tags = tagsMatch[1]
-            .split(",")
-            .map(x => x.trim())
-            .filter(Boolean)
-            .slice(0, 30);
-        }
+      let description =
+        String(data.description || "").trim();
 
-        if (strategyMatch?.[1]) {
-          strategy =
-            strategyMatch[1].trim();
-        }
+      let tags =
+        Array.isArray(data.tags)
+          ? data.tags
+          : [];
+
+      let hashtags =
+        Array.isArray(data.hashtags)
+          ? data.hashtags
+          : [];
+
+      const strategy =
+        String(data.strategy || "").trim();
+
+      tags = [...new Map(
+        tags
+          .map(x => String(x || "").replace(/^#/, "").trim())
+          .filter(Boolean)
+          .map(x => [x.toLowerCase(), x])
+      ).values()].slice(0, 30);
+
+      hashtags = [...new Map(
+        hashtags
+          .map(x => String(x || "").replace(/\s+/g, "").trim())
+          .filter(Boolean)
+          .map(x => x.startsWith("#") ? x : "#" + x)
+          .map(x => [x.toLowerCase(), x])
+      ).values()].slice(0, 5);
+
+      if (!title || !description) {
+        throw new Error(
+          "AI did not generate a usable title and description."
+        );
+      }
+
+      if (hashtags.length) {
+        description += "\n\n" + hashtags.join(" ");
       }
 
       res.json({
         ok: true,
+
         file: {
           name: file.originalname,
           type: file.mimetype,
           sizeBytes: file.size,
-          sizeMB
+          durationSeconds: Number(duration.toFixed(2))
         },
+
         analysis: {
           title,
           description,
           tags,
+          hashtags,
           strategy,
+
+          metadata: {
+            analysisMode: "actual-video-frame-analysis",
+            framesAnalyzed,
+            titleCount: 1,
+            tagCount: tags.length,
+            hashtagCount: hashtags.length
+          },
+
           raw
         }
       });
 
     } catch (error) {
-      console.error("AI Brain error:", error);
+
+      console.error("VIDEO AI ERROR:", error);
 
       res.status(500).json({
         ok: false,
-        error: error.message ||
-          "Video analysis failed."
+        error: error.message || "Video analysis failed."
       });
+
+    } finally {
+
+      if (tempDir) {
+        try {
+          fs.rmSync(tempDir, {
+            recursive: true,
+            force: true
+          });
+        } catch (e) {}
+      }
     }
   }
 );
