@@ -7,8 +7,13 @@ android {
         applicationId "com.aditybhat.kalicommandai"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+<<<<<<< HEAD
         versionCode 1
         versionName "1.0"
+=======
+        versionCode 3
+        versionName "1.0.3"
+>>>>>>> c6f3524a7300109d1558a8cf687956ae445d68f4
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
