@@ -1334,3 +1334,198 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("✓ YouTube Connect button activated");
   }
 });
+
+
+/* ========================================
+   YOUTUBE LOGIN STATUS SYSTEM
+======================================== */
+
+async function updateYouTubeLoginStatus() {
+
+  const backend =
+    window.BACKEND_URL ||
+    window.backendBase ||
+    "https://kali-command-ai.onrender.com";
+
+  const nameEl =
+    document.getElementById("youtubeLoginName");
+
+  const stateEl =
+    document.getElementById("youtubeLoginState");
+
+  const avatarEl =
+    document.getElementById("youtubeAvatar");
+
+  const logoutBtn =
+    document.getElementById("youtubeLogoutButton");
+
+  if (!nameEl || !stateEl) return;
+
+  try {
+
+    nameEl.textContent =
+      "Checking account...";
+
+    stateEl.textContent =
+      "Checking login status";
+
+    const statusResponse =
+      await fetch(
+        backend + "/api/youtube/status"
+      );
+
+    const status =
+      await statusResponse.json();
+
+    if (!status.ok || !status.connected) {
+
+      nameEl.textContent =
+        "No YouTube account connected";
+
+      stateEl.textContent =
+        "🔴 LOGGED OUT";
+
+      if (avatarEl) {
+        avatarEl.innerHTML = "👤";
+      }
+
+      if (logoutBtn) {
+        logoutBtn.style.display = "none";
+      }
+
+      return;
+    }
+
+    const channelResponse =
+      await fetch(
+        backend + "/api/youtube/channel"
+      );
+
+    const channelData =
+      await channelResponse.json();
+
+    const channel =
+      channelData.channel || {};
+
+    const channelName =
+      channel.title ||
+      "Connected YouTube Account";
+
+    nameEl.textContent =
+      channelName;
+
+    stateEl.textContent =
+      "🟢 LOGGED IN • YouTube Connected";
+
+    if (logoutBtn) {
+      logoutBtn.style.display = "inline-block";
+    }
+
+    const thumbnail =
+      channel.thumbnails?.medium?.url ||
+      channel.thumbnails?.default?.url;
+
+    if (thumbnail && avatarEl) {
+
+      avatarEl.innerHTML = "";
+
+      const img = document.createElement("img");
+
+      img.src = thumbnail;
+      img.alt = channelName;
+
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.objectFit = "cover";
+
+      avatarEl.appendChild(img);
+    }
+
+  } catch (error) {
+
+    console.error(
+      "YouTube login status error:",
+      error
+    );
+
+    nameEl.textContent =
+      "Unable to check YouTube account";
+
+    stateEl.textContent =
+      "⚠️ Connection check failed";
+  }
+}
+
+
+/* YOUTUBE LOGOUT */
+
+document.addEventListener(
+  "click",
+  async (event) => {
+
+    if (
+      event.target.id !==
+      "youtubeLogoutButton"
+    ) return;
+
+    const button = event.target;
+
+    try {
+
+      button.disabled = true;
+
+      button.textContent =
+        "Logging out...";
+
+      const backend =
+        window.BACKEND_URL ||
+        window.backendBase ||
+        "https://kali-command-ai.onrender.com";
+
+      const response =
+        await fetch(
+          backend + "/api/youtube/disconnect",
+          {
+            method: "POST"
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (!result.ok) {
+        throw new Error(
+          result.error ||
+          "Logout failed"
+        );
+      }
+
+      await updateYouTubeLoginStatus();
+
+    } catch (error) {
+
+      alert(
+        "Logout failed: " +
+        error.message
+      );
+
+    } finally {
+
+      button.disabled = false;
+
+      button.textContent =
+        "Logout";
+    }
+  }
+);
+
+
+/* AUTO CHECK LOGIN STATUS */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    updateYouTubeLoginStatus();
+  }
+);
+
