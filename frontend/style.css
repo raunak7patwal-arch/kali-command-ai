@@ -1,0 +1,148 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0b0d12;
+  color: #ffffff;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background: #11151f;
+  border-bottom: 1px solid #252b38;
+}
+
+.logo {
+  width: 55px;
+  height: 55px;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  background: #1b2230;
+  border-radius: 15px;
+}
+
+h1 {
+  margin: 0;
+}
+
+header p {
+  margin: 5px 0 0;
+  color: #aab2c0;
+}
+
+main {
+  width: min(900px, 94%);
+  margin: 25px auto;
+}
+
+.card {
+  background: #121722;
+  border: 1px solid #252d3b;
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  margin: 12px 0 7px;
+  font-weight: bold;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  background: #0b0f17;
+  color: white;
+  border: 1px solid #303a4d;
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 16px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.options {
+  display: grid;
+  gap: 10px;
+}
+
+.option {
+  background: #0b0f17;
+  border: 1px solid #303a4d;
+  padding: 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.option input {
+  width: auto;
+  margin-right: 10px;
+}
+
+.primary {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  background: #ffffff;
+  color: #000000;
+}
+
+.primary:disabled {
+  opacity: 0.6;
+}
+
+#status {
+  padding: 15px 0;
+  text-align: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.title-option {
+  padding: 14px;
+  margin: 8px 0;
+  background: #0b0f17;
+  border: 1px solid #303a4d;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.title-option:hover {
+  border-color: white;
+}
+
+.big-output {
+  min-height: 350px;
+  margin-top: 10px;
+}
+
+.tag {
+  display: inline-block;
+  background: #20293a;
+  padding: 9px 12px;
+  border-radius: 20px;
+  margin: 5px;
+  font-size: 14px;
+}
+
+small {
+  color: #aab2c0;
+}

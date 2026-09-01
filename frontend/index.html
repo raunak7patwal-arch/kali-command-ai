@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Kali Command AI</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+  <div class="header-left">
+
+    <div class="logo">⚡</div>
+
+    <div>
+      <h1>Kali Command AI</h1>
+      <p data-i18n="subtitle">AI Video Optimization Studio</p>
+    </div>
+
+  </div>
+
+  <select id="languageSelect" class="language-select">
+    <option value="en">🇬🇧 English</option>
+    <option value="hi">🇮🇳 हिंदी</option>
+  </select>
+
+</header>
+
+
+<main>
+
+<section class="hero">
+
+  <h2 data-i18n="welcome">Welcome to Kali Command AI</h2>
+
+  <p data-i18n="heroText">
+    Create optimized titles, descriptions and relevant tags for your videos.
+  </p>
+
+</section>
+
+
+<section class="card">
+
+  <h2 data-i18n="videoSetup">🎥 Video Setup</h2>
+
+
+  <label data-i18n="selectVideo">Select Video</label>
+
+  <input
+    type="file"
+    id="videoFile"
+    accept="video/*"
+  >
+
+
+  <label data-i18n="videoTopic">Video Topic</label>
+
+  <input
+    id="topic"
+    data-i18n-placeholder="topicPlaceholder"
+    placeholder="Example: Best Free Fire Gameplay Tips"
+  >
+
+
+  <label data-i18n="videoDetails">
+    More Details About Your Video
+  </label>
+
+  <textarea
+    id="details"
+    data-i18n-placeholder="detailsPlaceholder"
+    placeholder="Explain what happens in your video..."
+  ></textarea>
+
+</section>
+
+
+<section class="card">
+
+  <h2 data-i18n="videoType">🎬 Video Type</h2>
+
+  <div class="options">
+
+    <label class="option">
+
+      <input
+        type="radio"
+        name="videoType"
+        value="long"
+        checked
+      >
+
+      🎬 <span data-i18n="longVideo">Long Video</span>
+
+    </label>
+
+
+    <label class="option">
+
+      <input
+        type="radio"
+        name="videoType"
+        value="short"
+      >
+
+      📱 <span data-i18n="shortVideo">YouTube Short</span>
+
+    </label>
+
+  </div>
+
+</section>
+
+
+<section class="card">
+
+  <h2 data-i18n="visibility">🌍 Visibility</h2>
+
+  <select id="visibility">
+
+    <option value="public">
+      🌍 Public
+    </option>
+
+    <option value="unlisted">
+      🔗 Unlisted
+    </option>
+
+    <option value="private">
+      🔒 Private
+    </option>
+
+  </select>
+
+</section>
+
+
+<section class="card">
+
+  <h2 data-i18n="workingMode">🤖 Working Mode</h2>
+
+  <div class="options">
+
+    <label class="option">
+
+      <input
+        type="radio"
+        name="mode"
+        value="auto"
+        checked
+      >
+
+      🤖
+      <span data-i18n="automatic">
+        AI Automatically
+      </span>
+
+    </label>
+
+
+    <label class="option">
+
+      <input
+        type="radio"
+        name="mode"
+        value="manual"
+      >
+
+      ✍️
+      <span data-i18n="manual">
+        Manual
+      </span>
+
+    </label>
+
+
+    <label class="option">
+
+      <input
+        type="radio"
+        name="mode"
+        value="edit"
+      >
+
+      ✏️
+      <span data-i18n="aiEdit">
+        AI Generate + Edit
+      </span>
+
+    </label>
+
+  </div>
+
+</section>
+
+
+<button id="generateBtn" class="primary">
+
+  ⚡ <span data-i18n="generate">
+    Generate Video Package
+  </span>
+
+</button>
+
+
+<div id="status"></div>
+
+
+<section id="results" class="hidden">
+
+  <div class="card">
+
+    <h2 data-i18n="titles">
+      🔥 Title Options
+    </h2>
+
+    <div id="titles"></div>
+
+  </div>
+
+
+  <div class="card">
+
+    <h2 data-i18n="description">
+      📝 Description
+    </h2>
+
+    <small id="descriptionCount"></small>
+
+    <textarea
+      id="descriptionOutput"
+      class="big-output"
+    ></textarea>
+
+  </div>
+
+
+  <div class="card">
+
+    <h2 data-i18n="tags">
+      🏷️ Relevant Tags
+    </h2>
+
+    <div id="tags"></div>
+
+  </div>
+
+</section>
+
+</main>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>

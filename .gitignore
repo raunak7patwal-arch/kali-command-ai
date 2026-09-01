@@ -1,0 +1,8 @@
+node_modules/
+.gradle/
+android/.gradle/
+android/app/build/
+frontend/uploads/
+frontend/output/
+*.apk
+local.properties
