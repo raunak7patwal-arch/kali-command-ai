@@ -1,261 +1,487 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Kali Command AI</title>
-
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube AI Command Center</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+<div id="welcomeScreen" class="welcome-screen">
+  <div class="welcome-card">
+    <div class="welcome-logo">🧠</div>
+    <div class="eyebrow">AI YOUTUBE COMMAND CENTER</div>
+    <h1>KALI COMMAND AI</h1>
+    <p>Build smarter. Grow stronger.</p>
+    <button id="enterApp" class="primary-btn">🚀 Enter Command Center</button>
+    <div class="welcome-credit">
+      Built by <strong>Raunak Patwal</strong><br>
+      School of GIC Bada
+    </div>
+  </div>
+</div>
 
-<header>
-  <div class="header-left">
+<div class="app">
 
-    <div class="logo">⚡</div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">▶</div>
+            <div>
+                <h2>YT AI</h2>
+                <span>COMMAND CENTER</span>
+            </div>
+        </div>
 
-    <div>
-      <h1>Kali Command AI</h1>
-      <p data-i18n="subtitle">AI Video Optimization Studio</p>
+        <nav>
+            <button class="nav-btn active" data-page="dashboard">
+                🏠 <span>Dashboard</span>
+            </button>
+
+            <button class="nav-btn ai-brain" data-page="ai-brain">
+                🧠 <span>AI BRAIN</span>
+            </button>
+
+            <div class="nav-title">CREATE</div>
+
+            <button class="nav-btn" data-page="publisher">
+                🎬 <span>Auto Publisher</span>
+            </button>
+
+            <button class="nav-btn" data-page="titles">
+                ✨ <span>Title Lab</span>
+            </button>
+
+            <button class="nav-btn" data-page="description">
+                📝 <span>Description Lab</span>
+            </button>
+
+            <button class="nav-btn" data-page="keywords">
+                🏷️ <span>Keyword Lab</span>
+            </button>
+
+            <div class="nav-title">ANALYZE</div>
+
+            <button class="nav-btn" data-page="doctor">
+                📺 <span>Channel Doctor</span>
+            </button>
+
+            <button class="nav-btn" data-page="analytics">
+                📊 <span>Analytics</span>
+            </button>
+
+            <button class="nav-btn" data-page="growth">
+                📈 <span>Growth Engine</span>
+            </button>
+
+            <button class="nav-btn" data-page="thumbnail">
+                🖼️ <span>Thumbnail Lab</span>
+            </button>
+
+            <div class="nav-title">AUTOMATION</div>
+
+            <button class="nav-btn" data-page="scheduler">
+                ⏰ <span>Smart Scheduler</span>
+            </button>
+
+            <button class="nav-btn" data-page="video-lab">
+                🎥 <span>Video Lab</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <button class="nav-btn" data-page="settings">
+                ⚙️ <span>Settings</span>
+            </button>
+        </div>
+    </aside>
+
+
+    <!-- MAIN AREA -->
+    <main class="main">
+
+        <header class="topbar">
+            <div>
+                <h1 id="pageTitle">Command Center</h1>
+                <p id="pageSubtitle">Your AI-powered YouTube workspace</p>
+            </div>
+
+            <div class="top-actions">
+                <div class="status">
+                    <span class="status-dot"></span>
+                    AI SYSTEM READY
+                </div>
+
+                
+<!-- YOUTUBE LOGIN STATUS -->
+<div id="youtubeLoginStatus"
+style="
+margin:16px 0;
+padding:14px;
+border-radius:14px;
+border:1px solid rgba(255,255,255,.15);
+background:rgba(0,0,0,.22);
+display:flex;
+align-items:center;
+gap:12px;
+">
+  <div id="youtubeAvatar"
+  style="
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  background:#333;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  overflow:hidden;
+  ">
+    👤
+  </div>
+
+  <div style="flex:1">
+    <div id="youtubeLoginName"
+    style="font-weight:700">
+      Checking YouTube account...
     </div>
 
+    <div id="youtubeLoginState"
+    style="font-size:12px;opacity:.8">
+      Checking login status
+    </div>
   </div>
 
-  <select id="languageSelect" class="language-select">
-    <option value="en">🇬🇧 English</option>
-    <option value="hi">🇮🇳 हिंदी</option>
-  </select>
+  <button
+    id="youtubeLogoutButton"
+    style="
+    display:none;
+    padding:9px 13px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    ">
+    Logout
+  </button>
+</div>
+<!-- END YOUTUBE LOGIN STATUS -->
+
+<button class="channel-btn" id="connectChannel">
+                    🔐 Connect YouTube
+                </button>
+            </div>
+        </header>
+
+
+        <!-- DASHBOARD -->
+        <section class="page active-page" id="dashboard">
+
+            <div class="hero">
+                <div>
+                    <div class="eyebrow">WELCOME BACK</div>
+                    <h2>Build smarter.<br><span>Grow stronger.</span></h2>
+                    <p>
+                        Analyze your channel, optimize videos and manage
+                        your YouTube workflow from one powerful AI workspace.
+                    </p>
+
+                    <button class="primary-btn" data-go="ai-brain">
+                        🧠 Launch AI Brain
+                    </button>
+                </div>
+
+                <div class="hero-orb">
+                    <div class="orb-ring ring1"></div>
+                    <div class="orb-ring ring2"></div>
+                    <div class="orb-core">🧠</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span>CHANNEL HEALTH</span>
+                    <strong>--</strong>
+                    <small>Connect channel to analyze</small>
+                </div>
+
+                <div class="stat-card">
+                    <span>AI INSIGHTS</span>
+                    <strong>0</strong>
+                    <small>Waiting for analysis</small>
+                </div>
+
+                <div class="stat-card">
+                    <span>VIDEOS ANALYZED</span>
+                    <strong>0</strong>
+                    <small>Start with AI Brain</small>
+                </div>
+
+                <div class="stat-card">
+                    <span>GROWTH STATUS</span>
+                    <strong>READY</strong>
+                    <small>AI optimization available</small>
+                </div>
+            </div>
+
+            <div class="quick-grid">
+
+                <button class="quick-card" data-go="ai-brain">
+                    <div class="quick-icon">🧠</div>
+                    <h3>AI Brain</h3>
+                    <p>Upload a video and let AI build the strategy.</p>
+                </button>
+
+                <button class="quick-card" data-go="titles">
+                    <div class="quick-icon">✨</div>
+                    <h3>Generate Titles</h3>
+                    <p>Create multiple title ideas for your content.</p>
+                </button>
+
+                <button class="quick-card" data-go="doctor">
+                    <div class="quick-icon">📺</div>
+                    <h3>Channel Doctor</h3>
+                    <p>Find problems and opportunities in your channel.</p>
+                </button>
+
+                <button class="quick-card" data-go="growth">
+                    <div class="quick-icon">📈</div>
+                    <h3>Growth Strategy</h3>
+                    <p>Build a smarter content growth plan.</p>
+                </button>
+
+            </div>
+
+        </section>
+
 
-</header>
-
-
-<main>
-
-<section class="hero">
-
-  <h2 data-i18n="welcome">Welcome to Kali Command AI</h2>
-
-  <p data-i18n="heroText">
-    Create optimized titles, descriptions and relevant tags for your videos.
-  </p>
-
-</section>
-
-
-<section class="card">
-
-  <h2 data-i18n="videoSetup">🎥 Video Setup</h2>
-
-
-  <label data-i18n="selectVideo">Select Video</label>
-
-  <input
-    type="file"
-    id="videoFile"
-    accept="video/*"
-  >
-
-
-  <label data-i18n="videoTopic">Video Topic</label>
-
-  <input
-    id="topic"
-    data-i18n-placeholder="topicPlaceholder"
-    placeholder="Example: Best Free Fire Gameplay Tips"
-  >
-
-
-  <label data-i18n="videoDetails">
-    More Details About Your Video
-  </label>
-
-  <textarea
-    id="details"
-    data-i18n-placeholder="detailsPlaceholder"
-    placeholder="Explain what happens in your video..."
-  ></textarea>
-
-</section>
-
-
-<section class="card">
-
-  <h2 data-i18n="videoType">🎬 Video Type</h2>
-
-  <div class="options">
-
-    <label class="option">
-
-      <input
-        type="radio"
-        name="videoType"
-        value="long"
-        checked
-      >
-
-      🎬 <span data-i18n="longVideo">Long Video</span>
-
-    </label>
-
-
-    <label class="option">
-
-      <input
-        type="radio"
-        name="videoType"
-        value="short"
-      >
-
-      📱 <span data-i18n="shortVideo">YouTube Short</span>
-
-    </label>
-
-  </div>
-
-</section>
-
-
-<section class="card">
-
-  <h2 data-i18n="visibility">🌍 Visibility</h2>
-
-  <select id="visibility">
-
-    <option value="public">
-      🌍 Public
-    </option>
-
-    <option value="unlisted">
-      🔗 Unlisted
-    </option>
-
-    <option value="private">
-      🔒 Private
-    </option>
-
-  </select>
-
-</section>
-
-
-<section class="card">
-
-  <h2 data-i18n="workingMode">🤖 Working Mode</h2>
-
-  <div class="options">
-
-    <label class="option">
-
-      <input
-        type="radio"
-        name="mode"
-        value="auto"
-        checked
-      >
-
-      🤖
-      <span data-i18n="automatic">
-        AI Automatically
-      </span>
-
-    </label>
-
-
-    <label class="option">
-
-      <input
-        type="radio"
-        name="mode"
-        value="manual"
-      >
-
-      ✍️
-      <span data-i18n="manual">
-        Manual
-      </span>
-
-    </label>
-
-
-    <label class="option">
-
-      <input
-        type="radio"
-        name="mode"
-        value="edit"
-      >
-
-      ✏️
-      <span data-i18n="aiEdit">
-        AI Generate + Edit
-      </span>
-
-    </label>
-
-  </div>
-
-</section>
-
-
-<button id="generateBtn" class="primary">
-
-  ⚡ <span data-i18n="generate">
-    Generate Video Package
-  </span>
-
-</button>
-
-
-<div id="status"></div>
-
-
-<section id="results" class="hidden">
-
-  <div class="card">
-
-    <h2 data-i18n="titles">
-      🔥 Title Options
-    </h2>
-
-    <div id="titles"></div>
-
-  </div>
-
-
-  <div class="card">
-
-    <h2 data-i18n="description">
-      📝 Description
-    </h2>
-
-    <small id="descriptionCount"></small>
-
-    <textarea
-      id="descriptionOutput"
-      class="big-output"
-    ></textarea>
-
-  </div>
-
-
-  <div class="card">
-
-    <h2 data-i18n="tags">
-      🏷️ Relevant Tags
-    </h2>
-
-    <div id="tags"></div>
-
-  </div>
-
-</section>
-
-</main>
-
-
+        <!-- AI BRAIN -->
+        <section class="page" id="ai-brain">
+
+            <div class="brain-header">
+                <div>
+                    <div class="eyebrow">AUTONOMOUS VIDEO INTELLIGENCE</div>
+                    <h2>🧠 AI Brain</h2>
+                    <p>
+                        Upload your video. AI will analyze the content and
+                        prepare your complete publishing strategy.
+                    </p>
+                </div>
+
+                <div class="brain-badge">AI CORE ONLINE</div>
+            </div>
+
+            <div class="brain-grid">
+
+                <div class="upload-card">
+                    <div class="upload-icon">🎬</div>
+                    <h3>Drop Your Video</h3>
+                    <p>Upload a video to start the AI analysis pipeline.</p>
+
+                    <input type="file" id="brainVideo" accept="video/*">
+
+                    <button class="primary-btn" id="startBrain">
+                        🧠 Analyze With AI Brain
+                    </button>
+                </div>
+
+                <div class="pipeline-card">
+                    <h3>AI PIPELINE</h3>
+
+                    <div class="pipeline-step">🎬 Video Understanding</div>
+                    <div class="pipeline-step">🗣️ Content & Topic Analysis</div>
+                    <div class="pipeline-step">✨ Title Intelligence</div>
+                    <div class="pipeline-step">📝 Description Engine</div>
+                    <div class="pipeline-step">🏷️ Keyword Strategy</div>
+                    <div class="pipeline-step">📊 Performance Forecast</div>
+                    <div class="pipeline-step">⏰ Smart Scheduling</div>
+                    <div class="pipeline-step">🚀 Publishing Preparation</div>
+                </div>
+
+            </div>
+
+            <div id="brainResults" class="results-area"></div>
+
+        </section>
+
+
+        <!-- GENERIC TOOL PAGES -->
+        <section class="page tool-page" id="publisher">
+            <div class="tool-header">
+                <div class="tool-icon">🎬</div>
+                <div>
+                    <h2>Auto Publisher</h2>
+                    <p>Prepare and publish authorized videos with AI assistance.</p>
+                </div>
+            </div>
+            <div class="coming-card">Publisher automation will connect here.</div>
+        </section>
+
+        <section class="page tool-page" id="titles">
+            <div class="tool-header">
+                <div class="tool-icon">✨</div>
+                <div>
+                    <h2>Title Lab</h2>
+                    <p>Generate and compare title ideas.</p>
+                </div>
+            </div>
+
+            <div class="tool-workspace">
+                <textarea id="titleTopic" placeholder="Describe your video topic..."></textarea>
+                <button class="primary-btn" id="generateTitles">✨ Generate Titles</button>
+                <div id="titleResults" class="results-area"></div>
+            </div>
+        </section>
+
+        <section class="page tool-page" id="description">
+            <div class="tool-header">
+                <div class="tool-icon">📝</div>
+                <div>
+                    <h2>Description Lab</h2>
+                    <p>Create optimized video descriptions.</p>
+                </div>
+            </div>
+            <div class="tool-workspace">
+<textarea id="descriptionTopic" placeholder="Describe your video topic..."></textarea>
+<button class="primary-btn" id="generateDescription">📝 Generate Description</button>
+<div id="descriptionResults" class="results-area"></div>
+</div>
+        </section>
+
+        <section class="page tool-page" id="keywords">
+            <div class="tool-header">
+                <div class="tool-icon">🏷️</div>
+                <div>
+                    <h2>Keyword Lab</h2>
+                    <p>Discover keywords and content opportunities.</p>
+                </div>
+            </div>
+            <div class="tool-workspace">
+<textarea id="keywordTopic" placeholder="Enter your video topic..."></textarea>
+<button class="primary-btn" id="generateKeywords">🏷️ Generate Keywords</button>
+<div id="keywordResults" class="results-area"></div>
+</div>
+        </section>
+
+        <section class="page tool-page" id="doctor">
+            <div class="tool-header">
+                <div class="tool-icon">📺</div>
+                <div>
+                    <h2>Channel Doctor</h2>
+                    <p>Analyze channel health and identify improvement opportunities.</p>
+                </div>
+            </div>
+            <div class="tool-workspace">
+<textarea id="doctorTopic" placeholder="Enter your channel topic or describe your channel..."></textarea>
+<button class="primary-btn" id="runDoctor">📺 Run Channel Check</button>
+<div id="doctorResults" class="results-area"></div>
+</div>
+        </section>
+
+        <section class="page tool-page" id="analytics">
+            <div class="tool-header">
+                <div class="tool-icon">📊</div>
+                <div>
+                    <h2>Analytics Lab</h2>
+                    <p>Understand your channel performance.</p>
+                </div>
+            </div>
+            <div class="coming-card">Analytics dashboard will appear after channel connection.</div>
+        </section>
+
+        <section class="page tool-page" id="growth">
+            <div class="tool-header">
+                <div class="tool-icon">📈</div>
+                <div>
+                    <h2>Growth Engine</h2>
+                    <p>Create data-informed content strategies.</p>
+                </div>
+            </div>
+            <div class="tool-workspace">
+<textarea id="growthTopic" placeholder="Enter your channel/video topic..."></textarea>
+<button class="primary-btn" id="generateGrowth">📈 Build Growth Strategy</button>
+<div id="growthResults" class="results-area"></div>
+</div>
+        </section>
+
+        <section class="page tool-page" id="thumbnail">
+            <div class="tool-header">
+                <div class="tool-icon">🖼️</div>
+                <div>
+                    <h2>Thumbnail Lab</h2>
+                    <p>Analyze and improve thumbnail strategy.</p>
+                </div>
+            </div>
+            <div class="tool-workspace">
+<textarea id="thumbnailTopic" placeholder="Enter your video topic..."></textarea>
+<button class="primary-btn" id="generateThumbnail">🖼️ Create Thumbnail Plan</button>
+<div id="thumbnailResults" class="results-area"></div>
+</div>
+        </section>
+
+        <section class="page tool-page" id="scheduler">
+            <div class="tool-header">
+                <div class="tool-icon">⏰</div>
+                <div>
+                    <h2>Smart Scheduler</h2>
+                    <p>Plan and schedule authorized uploads.</p>
+                </div>
+            </div>
+            <div class="tool-workspace">
+<input id="scheduleTitle" type="text" placeholder="Video title...">
+<input id="scheduleDate" type="datetime-local">
+<button class="primary-btn" id="saveSchedule">⏰ Save Schedule</button>
+<div id="scheduleResults" class="results-area"></div>
+</div>
+        </section>
+
+        <section class="page tool-page" id="video-lab">
+            <div class="tool-header">
+                <div class="tool-icon">🎥</div>
+                <div>
+                    <h2>Video Lab</h2>
+                    <p>Prepare and optimize your video files.</p>
+                </div>
+            </div>
+            <div class="tool-workspace">
+<input id="videoTitle" type="text" placeholder="Enter video title...">
+<textarea id="videoNotes" placeholder="Enter video notes or content plan..."></textarea>
+<button class="primary-btn" id="prepareVideo">🎥 Prepare Video Plan</button>
+<div id="videoResults" class="results-area"></div>
+</div>
+        </section>
+
+        <section class="page tool-page" id="settings">
+            <div class="tool-header">
+                <div class="tool-icon">⚙️</div>
+                <div>
+                    <h2>Settings</h2>
+                    <p>Configure your YouTube AI Command Center.</p>
+                </div>
+            </div>
+            <div class="coming-card">System settings will appear here.</div>
+        </section>
+
+    </main>
+</div>
+
+<script src="config.js"></script>
 <script src="app.js"></script>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const welcome = document.getElementById("welcomeScreen");
+  const enter = document.getElementById("enterApp");
+
+  if (sessionStorage.getItem("kaliEntered") === "1") {
+    welcome.style.display = "none";
+  }
+
+  enter.addEventListener("click", () => {
+    sessionStorage.setItem("kaliEntered", "1");
+    welcome.style.display = "none";
+  });
+});
+</script>
 </body>
 </html>
